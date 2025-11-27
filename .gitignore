@@ -32,3 +32,5 @@ main
 # OS X generated file
 .DS_Store
 
+# AI request markdown documents for code generation
+ai_feature_request/*
