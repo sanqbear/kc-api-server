@@ -1,4 +1,4 @@
-# Project kc_server
+# Project kc-api
 
 One Paragraph of project description goes here
 

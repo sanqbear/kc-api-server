@@ -1,32 +1,31 @@
 package server
 
 import (
-	"github.com/gin-gonic/gin"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-func TestHelloWorldHandler(t *testing.T) {
+func TestHandler(t *testing.T) {
 	s := &Server{}
-	r := gin.New()
-	r.GET("/", s.HelloWorldHandler)
-	// Create a test HTTP request
-	req, err := http.NewRequest("GET", "/", nil)
+	server := httptest.NewServer(http.HandlerFunc(s.HelloWorldHandler))
+	defer server.Close()
+	resp, err := http.Get(server.URL)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("error making request to server. Err: %v", err)
 	}
-	// Create a ResponseRecorder to record the response
-	rr := httptest.NewRecorder()
-	// Serve the HTTP request
-	r.ServeHTTP(rr, req)
-	// Check the status code
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("Handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	defer resp.Body.Close()
+	// Assertions
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status OK; got %v", resp.Status)
 	}
-	// Check the response body
 	expected := "{\"message\":\"Hello World\"}"
-	if rr.Body.String() != expected {
-		t.Errorf("Handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("error reading response body. Err: %v", err)
+	}
+	if expected != string(body) {
+		t.Errorf("expected response body to be %v; got %v", expected, string(body))
 	}
 }

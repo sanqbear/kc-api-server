@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
-	"kc_server/internal/database"
+	"kc-api/internal/database"
 )
 
 type Server struct {

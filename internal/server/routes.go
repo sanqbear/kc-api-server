@@ -1,36 +1,47 @@
 package server
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
-	r := gin.Default()
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Add your frontend URL
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type"},
-		AllowCredentials: true, // Enable cookies/auth
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300,
 	}))
 
-	r.GET("/", s.HelloWorldHandler)
+	r.Get("/", s.HelloWorldHandler)
 
-	r.GET("/health", s.healthHandler)
+	r.Get("/health", s.healthHandler)
 
 	return r
 }
 
-func (s *Server) HelloWorldHandler(c *gin.Context) {
+func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	resp := make(map[string]string)
 	resp["message"] = "Hello World"
 
-	c.JSON(http.StatusOK, resp)
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatalf("error handling JSON marshal. Err: %v", err)
+	}
+
+	_, _ = w.Write(jsonResp)
 }
 
-func (s *Server) healthHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, s.db.Health())
+func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
+	jsonResp, _ := json.Marshal(s.db.Health())
+	_, _ = w.Write(jsonResp)
 }
