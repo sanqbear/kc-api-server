@@ -10,20 +10,35 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 
 	"kc-api/internal/database"
+	"kc-api/internal/users"
 )
 
 type Server struct {
 	port int
 
-	db database.Service
+	db          database.Service
+	userHandler *users.Handler
 }
 
 func NewServer() *http.Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
-	NewServer := &Server{
-		port: port,
+	encryptionKey := os.Getenv("ENCRYPTION_KEY")
+	if encryptionKey == "" {
+		encryptionKey = "default-encryption-key-change-in-production"
+	}
 
-		db: database.New(),
+	// Initialize database
+	db := database.New()
+
+	// Initialize user domain with DI
+	userRepo := users.NewRepository(db.DB())
+	userService := users.NewService(userRepo, encryptionKey)
+	userHandler := users.NewHandler(userService)
+
+	NewServer := &Server{
+		port:        port,
+		db:          db,
+		userHandler: userHandler,
 	}
 
 	// Declare Server config

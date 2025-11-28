@@ -1,4 +1,170 @@
 basePath: /
+definitions:
+  users.CreateUserRequest:
+    properties:
+      contact_mobile:
+        example: 010-1234-5678
+        type: string
+      contact_office:
+        example: 02-1234-5678
+        type: string
+      dept_id:
+        type: integer
+      duty_id:
+        type: integer
+      email:
+        example: john.doe@example.com
+        type: string
+      location_id:
+        type: integer
+      login_id:
+        example: john.doe
+        type: string
+      name:
+        type: object
+      password:
+        type: string
+      position_id:
+        type: integer
+      rank_id:
+        type: integer
+      title_id:
+        type: integer
+    type: object
+  users.ErrorResponse:
+    properties:
+      error:
+        example: Bad Request
+        type: string
+      message:
+        example: Invalid email format
+        type: string
+    type: object
+  users.SearchUserRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      mobile_full:
+        example: 010-1234-5678
+        type: string
+      mobile_last4:
+        example: "5678"
+        type: string
+      name:
+        example: John
+        type: string
+      office_full:
+        example: 02-1234-5678
+        type: string
+      office_last4:
+        example: "5678"
+        type: string
+    type: object
+  users.SuccessResponse:
+    properties:
+      message:
+        example: User deleted successfully
+        type: string
+    type: object
+  users.UpdateUserRequest:
+    properties:
+      contact_mobile:
+        example: 010-1234-5678
+        type: string
+      contact_office:
+        example: 02-1234-5678
+        type: string
+      dept_id:
+        type: integer
+      duty_id:
+        type: integer
+      email:
+        example: john.doe@example.com
+        type: string
+      is_visible:
+        type: boolean
+      location_id:
+        type: integer
+      login_id:
+        example: john.doe
+        type: string
+      name:
+        type: object
+      password:
+        type: string
+      position_id:
+        type: integer
+      rank_id:
+        type: integer
+      title_id:
+        type: integer
+    type: object
+  users.UserDetailResponse:
+    properties:
+      contact_mobile:
+        example: '***-****-1234'
+        type: string
+      contact_office:
+        example: '***-****-5678'
+        type: string
+      dept_name:
+        type: object
+      duty_name:
+        type: object
+      email:
+        example: john.doe@example.com
+        type: string
+      id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      location_name:
+        type: object
+      login_id:
+        example: john.doe
+        type: string
+      name:
+        type: object
+      position_name:
+        type: object
+      rank_name:
+        type: object
+      title_name:
+        type: object
+    type: object
+  users.UserListResponse:
+    properties:
+      email:
+        example: john.doe@example.com
+        type: string
+      id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      login_id:
+        example: john.doe
+        type: string
+      name:
+        type: object
+    type: object
+  users.UserListResponseWrapper:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/users.UserListResponse'
+        type: array
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total_count:
+        example: 100
+        type: integer
+      total_pages:
+        example: 10
+        type: integer
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -45,6 +211,222 @@ paths:
       summary: Health Check
       tags:
       - health
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of users with simplified response
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.UserListResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user with the provided data. Email and name are required.
+        If login_id is not provided, email is used as login_id.
+      parameters:
+      - description: User data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/users.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/users.UserListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "409":
+          description: Email or login_id already exists
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Performs a soft delete on a user (sets is_deleted flag to true)
+      parameters:
+      - description: User Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Retrieves detailed user information by their public ID
+      parameters:
+      - description: User Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.UserDetailResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get user by ID
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing user with the provided data
+      parameters:
+      - description: User Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User data to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/users.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.UserListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "409":
+          description: Email or login_id already exists
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user
+      tags:
+      - users
+  /users/search:
+    post:
+      consumes:
+      - application/json
+      description: Searches for users based on various criteria (name, email, mobile
+        number, office number)
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search criteria
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/users.SearchUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.UserListResponseWrapper'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/users.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Search users
+      tags:
+      - users
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

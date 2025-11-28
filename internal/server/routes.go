@@ -27,6 +27,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.Get("/health", s.healthHandler)
 
+	// Register user routes
+	s.userHandler.RegisterRoutes(r)
+
 	// Swagger UI route
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
