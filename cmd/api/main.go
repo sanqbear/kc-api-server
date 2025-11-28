@@ -9,8 +9,27 @@ import (
 	"syscall"
 	"time"
 
+	_ "kc-api/docs"
 	"kc-api/internal/server"
 )
+
+// @title Knowledge Center API
+// @version 1.0
+// @description Knowledge Center REST API Server
+
+// @contact.name API Support
+// @contact.email support@knowledgecenter.io
+
+// @license.name GNU General Public License v3.0
+// @license.url https://www.gnu.org/licenses/gpl-3.0.html
+
+// @host localhost:8080
+// @BasePath /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 func gracefulShutdown(apiServer *http.Server, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.

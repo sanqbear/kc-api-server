@@ -44,6 +44,17 @@ clean:
 	@echo "Cleaning..."
 	@rm -f main
 
+# Generate Swagger documentation
+swag:
+	@echo "Generating Swagger docs..."
+	@if command -v swag > /dev/null; then \
+		swag init -g cmd/api/main.go -o docs; \
+	else \
+		echo "Installing swag..."; \
+		go install github.com/swaggo/swag/cmd/swag@latest; \
+		swag init -g cmd/api/main.go -o docs; \
+	fi
+
 # Live Reload
 watch:
 	@if command -v air > /dev/null; then \
@@ -61,4 +72,4 @@ watch:
             fi; \
         fi
 
-.PHONY: all build run test clean watch docker-run docker-down itest
+.PHONY: all build run test clean watch docker-run docker-down itest swag

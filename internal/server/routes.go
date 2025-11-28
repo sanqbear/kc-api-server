@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -26,9 +27,22 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.Get("/health", s.healthHandler)
 
+	// Swagger UI route
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+
 	return r
 }
 
+// HelloWorldHandler godoc
+// @Summary      Hello World
+// @Description  Returns a hello world message
+// @Tags         general
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Router       / [get]
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	resp := make(map[string]string)
 	resp["message"] = "Hello World"
@@ -41,6 +55,14 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonResp)
 }
 
+// healthHandler godoc
+// @Summary      Health Check
+// @Description  Returns the health status of the service and database connection
+// @Tags         health
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Router       /health [get]
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResp, _ := json.Marshal(s.db.Health())
 	_, _ = w.Write(jsonResp)
