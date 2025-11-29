@@ -42,6 +42,52 @@
                 }
             }
         },
+        "/admin/refresh-permissions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Reloads API permissions from the database into the in-memory cache. This endpoint allows hot-reloading of permission rules without restarting the server.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Refresh API permissions cache",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/rbac.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/rbac.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - requires sysadmin role",
+                        "schema": {
+                            "$ref": "#/definitions/rbac.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/rbac.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Authenticates a user with login_id/email and password. Returns access token in response body and refresh token as HTTP-only cookie.",
@@ -781,6 +827,26 @@
                 },
                 "name": {
                     "type": "object"
+                }
+            }
+        },
+        "rbac.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "rbac.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Permissions refreshed successfully"
                 }
             }
         },

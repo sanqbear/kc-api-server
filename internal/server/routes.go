@@ -30,15 +30,19 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// Register public auth routes (login, register, refresh, logout)
 	s.authHandler.RegisterRoutes(r)
 
-	// Register user routes (public for now, can be protected later)
-	s.userHandler.RegisterRoutes(r)
-
-	// Protected routes requiring authentication
+	// Protected routes requiring authentication and RBAC authorization
 	r.Group(func(r chi.Router) {
 		r.Use(s.authMiddleware.Authenticate)
+		r.Use(s.rbacMiddleware.Authorize)
 
 		// Protected auth routes (me, logout-all)
 		s.authHandler.RegisterProtectedRoutes(r)
+
+		// Protected user routes
+		s.userHandler.RegisterRoutes(r)
+
+		// RBAC admin routes (refresh-permissions) - requires sysadmin role via RBAC
+		s.rbacHandler.RegisterRoutes(r)
 	})
 
 	// Swagger UI route

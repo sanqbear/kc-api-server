@@ -158,6 +158,11 @@ func GetUserIDFromContext(ctx context.Context) string {
 	return ""
 }
 
+// SetUserRolesInContext sets the user roles in the context (for testing purposes)
+func SetUserRolesInContext(ctx context.Context, roles []string) context.Context {
+	return context.WithValue(ctx, userRolesKey, roles)
+}
+
 // GetUserRolesFromContext retrieves the user roles from the context
 func GetUserRolesFromContext(ctx context.Context) []string {
 	if roles, ok := ctx.Value(userRolesKey).([]string); ok {
