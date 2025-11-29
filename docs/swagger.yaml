@@ -1,5 +1,95 @@
 basePath: /
 definitions:
+  auth.ErrorResponse:
+    properties:
+      error:
+        example: Unauthorized
+        type: string
+      message:
+        example: Invalid credentials
+        type: string
+    type: object
+  auth.LoginRequest:
+    properties:
+      login_id:
+        example: john.doe@example.com
+        type: string
+      password:
+        example: securePassword123
+        type: string
+    type: object
+  auth.LoginResponse:
+    properties:
+      tokens:
+        $ref: '#/definitions/auth.TokenResponse'
+      user:
+        $ref: '#/definitions/auth.UserInfo'
+    type: object
+  auth.MeResponse:
+    properties:
+      roles:
+        items:
+          type: string
+        type: array
+      user:
+        $ref: '#/definitions/auth.UserInfo'
+    type: object
+  auth.RegisterRequest:
+    properties:
+      email:
+        example: john.doe@example.com
+        type: string
+      login_id:
+        example: john.doe
+        type: string
+      name:
+        type: object
+      password:
+        example: securePassword123
+        type: string
+    type: object
+  auth.RegisterResponse:
+    properties:
+      message:
+        example: User registered successfully
+        type: string
+      tokens:
+        $ref: '#/definitions/auth.TokenResponse'
+      user:
+        $ref: '#/definitions/auth.UserInfo'
+    type: object
+  auth.SuccessResponse:
+    properties:
+      message:
+        example: Operation completed successfully
+        type: string
+    type: object
+  auth.TokenResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        example: 3600
+        type: integer
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  auth.UserInfo:
+    properties:
+      email:
+        example: john.doe@example.com
+        type: string
+      id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      login_id:
+        example: john.doe
+        type: string
+      name:
+        type: object
+    type: object
   users.CreateUserRequest:
     properties:
       contact_mobile:
@@ -194,6 +284,170 @@ paths:
       summary: Hello World
       tags:
       - general
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user with login_id/email and password. Returns
+        access token in response body and refresh token as HTTP-only cookie.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.LoginResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: User login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revokes the current refresh token and clears the cookie.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.SuccessResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: User logout
+      tags:
+      - auth
+  /auth/logout-all:
+    post:
+      consumes:
+      - application/json
+      description: Revokes all refresh tokens for the current user, logging them out
+        from all devices.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Logout from all devices
+      tags:
+      - auth
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Returns the currently authenticated user's information and roles.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.MeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user info
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Uses the refresh token from HTTP-only cookie to generate new access
+        and refresh tokens. Implements token rotation for security.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.TokenResponse'
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account with email, password, and name. The
+        user is automatically added to the 'public' group.
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/auth.RegisterResponse'
+        "400":
+          description: Invalid request or validation error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "409":
+          description: Email or login_id already exists
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - auth
   /health:
     get:
       consumes:

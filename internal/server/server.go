@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
+	"kc-api/internal/auth"
 	"kc-api/internal/database"
 	"kc-api/internal/users"
 )
@@ -16,8 +17,10 @@ import (
 type Server struct {
 	port int
 
-	db          database.Service
-	userHandler *users.Handler
+	db             database.Service
+	userHandler    *users.Handler
+	authHandler    *auth.Handler
+	authMiddleware *auth.Middleware
 }
 
 func NewServer() *http.Server {
@@ -25,6 +28,10 @@ func NewServer() *http.Server {
 	encryptionKey := os.Getenv("ENCRYPTION_KEY")
 	if encryptionKey == "" {
 		encryptionKey = "default-encryption-key-change-in-production"
+	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "default-jwt-secret-change-in-production"
 	}
 
 	// Initialize database
@@ -35,10 +42,18 @@ func NewServer() *http.Server {
 	userService := users.NewService(userRepo, encryptionKey)
 	userHandler := users.NewHandler(userService)
 
+	// Initialize auth domain with DI
+	authRepo := auth.NewRepository(db.DB())
+	authService := auth.NewService(authRepo, jwtSecret)
+	authHandler := auth.NewHandler(authService)
+	authMiddleware := auth.NewMiddleware(authService)
+
 	NewServer := &Server{
-		port:        port,
-		db:          db,
-		userHandler: userHandler,
+		port:           port,
+		db:             db,
+		userHandler:    userHandler,
+		authHandler:    authHandler,
+		authMiddleware: authMiddleware,
 	}
 
 	// Declare Server config

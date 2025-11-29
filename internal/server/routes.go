@@ -27,8 +27,19 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.Get("/health", s.healthHandler)
 
-	// Register user routes
+	// Register public auth routes (login, register, refresh, logout)
+	s.authHandler.RegisterRoutes(r)
+
+	// Register user routes (public for now, can be protected later)
 	s.userHandler.RegisterRoutes(r)
+
+	// Protected routes requiring authentication
+	r.Group(func(r chi.Router) {
+		r.Use(s.authMiddleware.Authenticate)
+
+		// Protected auth routes (me, logout-all)
+		s.authHandler.RegisterProtectedRoutes(r)
+	})
 
 	// Swagger UI route
 	r.Get("/swagger/*", httpSwagger.Handler(
