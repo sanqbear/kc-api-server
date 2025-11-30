@@ -33,7 +33,7 @@ func NewRepository(db *sql.DB) Repository {
 // Create inserts a new user into the database
 func (r *repository) Create(ctx context.Context, user *User) error {
 	query := `
-		INSERT INTO users (
+		INSERT INTO organizations.users (
 			login_id, name, email,
 			dept_id, rank_id, duty_id, title_id, position_id, location_id,
 			contact_mobile, contact_mobile_hash, contact_mobile_id,
@@ -73,7 +73,7 @@ func (r *repository) GetByPublicID(ctx context.Context, publicID string) (*User,
 			contact_mobile, contact_mobile_hash, contact_mobile_id,
 			contact_office, contact_office_hash, contact_office_id,
 			created_at, updated_at, password_hash, is_visible, is_deleted
-		FROM users
+		FROM organizations.users
 		WHERE public_id = $1 AND is_deleted = false`
 
 	user := &User{}
@@ -123,13 +123,13 @@ func (r *repository) GetDetailByPublicID(ctx context.Context, publicID string) (
 			COALESCE(l.name, '{}')::jsonb as location_name,
 			u.contact_mobile_id,
 			u.contact_office_id
-		FROM users u
-		LEFT JOIN departments d ON u.dept_id = d.id
-		LEFT JOIN common_codes r ON u.rank_id = r.id
-		LEFT JOIN common_codes du ON u.duty_id = du.id
-		LEFT JOIN common_codes t ON u.title_id = t.id
-		LEFT JOIN common_codes p ON u.position_id = p.id
-		LEFT JOIN common_codes l ON u.location_id = l.id
+		FROM organizations.users u
+		LEFT JOIN organizations.departments d ON u.dept_id = d.id
+		LEFT JOIN organizations.common_codes r ON u.rank_id = r.id
+		LEFT JOIN organizations.common_codes du ON u.duty_id = du.id
+		LEFT JOIN organizations.common_codes t ON u.title_id = t.id
+		LEFT JOIN organizations.common_codes p ON u.position_id = p.id
+		LEFT JOIN organizations.common_codes l ON u.location_id = l.id
 		WHERE u.public_id = $1 AND u.is_deleted = false`
 
 	var mobileID, officeID sql.NullString
@@ -169,7 +169,7 @@ func (r *repository) List(ctx context.Context, page, limit int) ([]User, int, er
 
 	// Get total count
 	var totalCount int
-	countQuery := `SELECT COUNT(*) FROM users WHERE is_deleted = false`
+	countQuery := `SELECT COUNT(*) FROM organizations.users WHERE is_deleted = false`
 	if err := r.db.QueryRowContext(ctx, countQuery).Scan(&totalCount); err != nil {
 		return nil, 0, err
 	}
@@ -181,7 +181,7 @@ func (r *repository) List(ctx context.Context, page, limit int) ([]User, int, er
 			contact_mobile, contact_mobile_hash, contact_mobile_id,
 			contact_office, contact_office_hash, contact_office_id,
 			created_at, updated_at, password_hash, is_visible, is_deleted
-		FROM users
+		FROM organizations.users
 		WHERE is_deleted = false
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2`
@@ -234,7 +234,7 @@ func (r *repository) List(ctx context.Context, page, limit int) ([]User, int, er
 // Update updates an existing user
 func (r *repository) Update(ctx context.Context, publicID string, user *User) error {
 	query := `
-		UPDATE users SET
+		UPDATE organizations.users SET
 			login_id = $1,
 			name = $2,
 			email = $3,
@@ -292,7 +292,7 @@ func (r *repository) Update(ctx context.Context, publicID string, user *User) er
 
 // Delete performs a soft delete on a user
 func (r *repository) Delete(ctx context.Context, publicID string) error {
-	query := `UPDATE users SET is_deleted = true, updated_at = NOW() WHERE public_id = $1 AND is_deleted = false`
+	query := `UPDATE organizations.users SET is_deleted = true, updated_at = NOW() WHERE public_id = $1 AND is_deleted = false`
 
 	result, err := r.db.ExecContext(ctx, query, publicID)
 	if err != nil {
@@ -360,7 +360,7 @@ func (r *repository) Search(ctx context.Context, criteria *SearchUserRequest, pa
 	whereClause := strings.Join(conditions, " AND ")
 
 	// Count query
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM users WHERE %s", whereClause)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM organizations.users WHERE %s", whereClause)
 	var totalCount int
 	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&totalCount); err != nil {
 		return nil, 0, err
@@ -373,7 +373,7 @@ func (r *repository) Search(ctx context.Context, criteria *SearchUserRequest, pa
 			contact_mobile, contact_mobile_hash, contact_mobile_id,
 			contact_office, contact_office_hash, contact_office_id,
 			created_at, updated_at, password_hash, is_visible, is_deleted
-		FROM users
+		FROM organizations.users
 		WHERE %s
 		ORDER BY created_at DESC
 		LIMIT $%d OFFSET $%d`, whereClause, argIndex, argIndex+1)
@@ -428,7 +428,7 @@ func (r *repository) Search(ctx context.Context, criteria *SearchUserRequest, pa
 // ExistsByEmail checks if a user with the given email exists
 func (r *repository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1 AND is_deleted = false)`
+	query := `SELECT EXISTS(SELECT 1 FROM organizations.users WHERE email = $1 AND is_deleted = false)`
 	err := r.db.QueryRowContext(ctx, query, email).Scan(&exists)
 	return exists, err
 }
@@ -436,7 +436,7 @@ func (r *repository) ExistsByEmail(ctx context.Context, email string) (bool, err
 // ExistsByLoginID checks if a user with the given login ID exists
 func (r *repository) ExistsByLoginID(ctx context.Context, loginID string) (bool, error) {
 	var exists bool
-	query := `SELECT EXISTS(SELECT 1 FROM users WHERE login_id = $1 AND is_deleted = false)`
+	query := `SELECT EXISTS(SELECT 1 FROM organizations.users WHERE login_id = $1 AND is_deleted = false)`
 	err := r.db.QueryRowContext(ctx, query, loginID).Scan(&exists)
 	return exists, err
 }

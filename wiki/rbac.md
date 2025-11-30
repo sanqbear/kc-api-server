@@ -72,7 +72,7 @@ For example:
 
 ### Logic Flow
 
-1. **Sysadmin Bypass**: If the user has the `sysadmin` role, the request is allowed immediately without further checks.
+1. **Full Access Bypass**: If the user has the `full_access` role, the request is allowed immediately without further checks.
 
 2. **Path Matching**: Uses `chi.RouteContext(r.Context()).RoutePattern()` to get the registered route pattern (e.g., `/users/{id}`) instead of the raw URL path.
 
@@ -119,7 +119,7 @@ INSERT INTO managements.api_permissions (method, path_pattern, required_roles, d
 ('GET', '/users/{id}', ARRAY['admin', 'user'], '{"en-US": "Get user by ID"}'),
 ('PUT', '/users/{id}', ARRAY['admin'], '{"en-US": "Update user"}'),
 ('DELETE', '/users/{id}', ARRAY['admin'], '{"en-US": "Delete user"}'),
-('POST', '/admin/refresh-permissions', ARRAY['sysadmin'], '{"en-US": "Refresh RBAC cache"}');
+('POST', '/admin/refresh-permissions', ARRAY['full_access'], '{"en-US": "Refresh RBAC cache"}');
 ```
 
 ## API Endpoints
@@ -142,7 +142,7 @@ Reloads API permissions from the database into the in-memory cache. This endpoin
 
 **Error Responses:**
 - `401 Unauthorized`: Missing or invalid access token
-- `403 Forbidden`: User doesn't have `sysadmin` role
+- `403 Forbidden`: User doesn't have `full_access` role
 - `500 Internal Server Error`: Database error
 
 ## Integration
@@ -172,9 +172,9 @@ if err := permissionManager.LoadPermissions(context.Background()); err != nil {
 
 ## Special Roles
 
-### sysadmin
+### full_access
 
-The `sysadmin` role has special privileges:
+The `full_access` role has special privileges:
 - Bypasses all RBAC permission checks
 - Can access any endpoint regardless of permission rules
 - Can trigger permission hot-reload via `/admin/refresh-permissions`
@@ -182,7 +182,7 @@ The `sysadmin` role has special privileges:
 ## Hot Reload Workflow
 
 1. Update permission rules in the database
-2. Call `POST /admin/refresh-permissions` with a `sysadmin` token
+2. Call `POST /admin/refresh-permissions` with a `full_access` token
 3. The in-memory cache is atomically replaced with new permissions
 4. New permission rules take effect immediately for subsequent requests
 
@@ -197,13 +197,13 @@ go test ./internal/rbac/... -v
 The tests cover:
 - PermissionManager loading and retrieval
 - Middleware authorization logic
-- Sysadmin bypass functionality
+- Full access bypass functionality
 - Default policy for unregistered routes
 - Handler refresh-permissions endpoint
 
 ## Security Considerations
 
-1. **Sysadmin Role**: Reserve this role for trusted administrators only
-2. **Permission Updates**: Only sysadmin users can reload permissions
+1. **Full Access Role**: Reserve this role for trusted administrators only
+2. **Permission Updates**: Only full_access users can reload permissions
 3. **Default Policy**: Consider changing to "deny by default" for high-security environments
 4. **Audit Trail**: Consider logging permission changes for compliance

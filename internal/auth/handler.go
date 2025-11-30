@@ -285,20 +285,41 @@ func getClientIP(r *http.Request) string {
 		// Take the first IP in the list
 		ips := strings.Split(xff, ",")
 		if len(ips) > 0 {
-			return strings.TrimSpace(ips[0])
+			return cleanIP(strings.TrimSpace(ips[0]))
 		}
 	}
 
 	// Check X-Real-IP header
 	xri := r.Header.Get("X-Real-IP")
 	if xri != "" {
-		return xri
+		return cleanIP(xri)
 	}
 
 	// Fall back to RemoteAddr
 	ip := r.RemoteAddr
-	// Remove port if present
-	if idx := strings.LastIndex(ip, ":"); idx != -1 {
+
+	// Handle IPv6 addresses with brackets (e.g., [::1]:port)
+	if strings.HasPrefix(ip, "[") {
+		if idx := strings.Index(ip, "]"); idx != -1 {
+			ip = ip[1:idx] // Extract IP from brackets
+		}
+	} else {
+		// Handle IPv4 addresses (e.g., 127.0.0.1:port)
+		if idx := strings.LastIndex(ip, ":"); idx != -1 {
+			ip = ip[:idx]
+		}
+	}
+
+	return ip
+}
+
+// cleanIP removes brackets from IPv6 addresses if present
+func cleanIP(ip string) string {
+	ip = strings.TrimPrefix(ip, "[")
+	ip = strings.TrimSuffix(ip, "]")
+	// Also remove port if present after bracket removal
+	if idx := strings.LastIndex(ip, ":"); idx != -1 && strings.Count(ip, ":") == 1 {
+		// Only remove if it looks like a port (single colon for IPv4)
 		ip = ip[:idx]
 	}
 	return ip

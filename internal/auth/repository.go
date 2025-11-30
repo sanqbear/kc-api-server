@@ -46,7 +46,7 @@ func NewRepository(db *sql.DB) Repository {
 func (r *repository) GetUserByLoginID(ctx context.Context, loginID string) (*AuthUser, error) {
 	query := `
 		SELECT id, public_id, login_id, email, name, password_hash, is_deleted
-		FROM users
+		FROM organizations.users
 		WHERE login_id = $1 AND is_deleted = false`
 
 	user := &AuthUser{}
@@ -73,7 +73,7 @@ func (r *repository) GetUserByLoginID(ctx context.Context, loginID string) (*Aut
 func (r *repository) GetUserByEmail(ctx context.Context, email string) (*AuthUser, error) {
 	query := `
 		SELECT id, public_id, login_id, email, name, password_hash, is_deleted
-		FROM users
+		FROM organizations.users
 		WHERE email = $1 AND is_deleted = false`
 
 	user := &AuthUser{}
@@ -99,7 +99,7 @@ func (r *repository) GetUserByEmail(ctx context.Context, email string) (*AuthUse
 // CreateUser creates a new user and returns the created user with ID
 func (r *repository) CreateUser(ctx context.Context, user *AuthUser) error {
 	query := `
-		INSERT INTO users (login_id, email, name, password_hash, is_visible, is_deleted)
+		INSERT INTO organizations.users (login_id, email, name, password_hash, is_visible, is_deleted)
 		VALUES ($1, $2, $3, $4, true, false)
 		RETURNING id, public_id`
 
@@ -114,7 +114,7 @@ func (r *repository) CreateUser(ctx context.Context, user *AuthUser) error {
 // GetUserInternalID retrieves the internal ID from a public UUID
 func (r *repository) GetUserInternalID(ctx context.Context, publicID string) (int, error) {
 	var id int
-	query := `SELECT id FROM users WHERE public_id = $1 AND is_deleted = false`
+	query := `SELECT id FROM organizations.users WHERE public_id = $1 AND is_deleted = false`
 	err := r.db.QueryRowContext(ctx, query, publicID).Scan(&id)
 	return id, err
 }
@@ -122,7 +122,7 @@ func (r *repository) GetUserInternalID(ctx context.Context, publicID string) (in
 // CreateToken stores a new refresh token
 func (r *repository) CreateToken(ctx context.Context, token *UserToken) error {
 	query := `
-		INSERT INTO user_tokens (user_id, token_hash, expires_at, is_revoked, parent_token_id, client_ip, user_agent)
+		INSERT INTO organizations.user_tokens (user_id, token_hash, expires_at, is_revoked, parent_token_id, client_ip, user_agent)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at, updated_at`
 
@@ -141,7 +141,7 @@ func (r *repository) CreateToken(ctx context.Context, token *UserToken) error {
 func (r *repository) GetTokenByHash(ctx context.Context, tokenHash string) (*UserToken, error) {
 	query := `
 		SELECT id, user_id, token_hash, expires_at, is_revoked, replaced_by_token_id, parent_token_id, client_ip, user_agent, created_at, updated_at
-		FROM user_tokens
+		FROM organizations.user_tokens
 		WHERE token_hash = $1`
 
 	token := &UserToken{}
@@ -182,21 +182,21 @@ func (r *repository) GetTokenByHash(ctx context.Context, tokenHash string) (*Use
 
 // RevokeToken marks a token as revoked
 func (r *repository) RevokeToken(ctx context.Context, tokenID int64) error {
-	query := `UPDATE user_tokens SET is_revoked = true, updated_at = NOW() WHERE id = $1`
+	query := `UPDATE organizations.user_tokens SET is_revoked = true, updated_at = NOW() WHERE id = $1`
 	_, err := r.db.ExecContext(ctx, query, tokenID)
 	return err
 }
 
 // RevokeAllUserTokens revokes all tokens for a user
 func (r *repository) RevokeAllUserTokens(ctx context.Context, userID int) error {
-	query := `UPDATE user_tokens SET is_revoked = true, updated_at = NOW() WHERE user_id = $1 AND is_revoked = false`
+	query := `UPDATE organizations.user_tokens SET is_revoked = true, updated_at = NOW() WHERE user_id = $1 AND is_revoked = false`
 	_, err := r.db.ExecContext(ctx, query, userID)
 	return err
 }
 
 // UpdateTokenReplacement marks a token as replaced by a new token
 func (r *repository) UpdateTokenReplacement(ctx context.Context, oldTokenID, newTokenID int64) error {
-	query := `UPDATE user_tokens SET replaced_by_token_id = $1, is_revoked = true, updated_at = NOW() WHERE id = $2`
+	query := `UPDATE organizations.user_tokens SET replaced_by_token_id = $1, is_revoked = true, updated_at = NOW() WHERE id = $2`
 	_, err := r.db.ExecContext(ctx, query, newTokenID, oldTokenID)
 	return err
 }
@@ -205,7 +205,7 @@ func (r *repository) UpdateTokenReplacement(ctx context.Context, oldTokenID, new
 func (r *repository) GetGroupByPublicID(ctx context.Context, publicID string) (*Group, error) {
 	query := `
 		SELECT id, public_id, name, description, created_at, updated_at
-		FROM groups
+		FROM organizations.groups
 		WHERE public_id = $1`
 
 	group := &Group{}
@@ -226,7 +226,7 @@ func (r *repository) GetGroupByPublicID(ctx context.Context, publicID string) (*
 // AddUserToGroup adds a user to a group
 func (r *repository) AddUserToGroup(ctx context.Context, userID, groupID int, assignedBy *int) error {
 	query := `
-		INSERT INTO group_users (group_id, user_id, assigned_by, assigned_at)
+		INSERT INTO organizations.group_users (group_id, user_id, assigned_by, assigned_at)
 		VALUES ($1, $2, $3, NOW())
 		ON CONFLICT (group_id, user_id) DO NOTHING`
 
@@ -238,8 +238,8 @@ func (r *repository) AddUserToGroup(ctx context.Context, userID, groupID int, as
 func (r *repository) GetUserGroups(ctx context.Context, userID int) ([]Group, error) {
 	query := `
 		SELECT g.id, g.public_id, g.name, g.description, g.created_at, g.updated_at
-		FROM groups g
-		INNER JOIN group_users gu ON g.id = gu.group_id
+		FROM organizations.groups g
+		INNER JOIN organizations.group_users gu ON g.id = gu.group_id
 		WHERE gu.user_id = $1`
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
@@ -271,8 +271,8 @@ func (r *repository) GetUserGroups(ctx context.Context, userID int) ([]Group, er
 func (r *repository) GetUserRoles(ctx context.Context, userID int) ([]string, error) {
 	query := `
 		SELECT r.name
-		FROM roles r
-		INNER JOIN user_roles ur ON r.id = ur.role_id
+		FROM organizations.roles r
+		INNER JOIN organizations.user_roles ur ON r.id = ur.role_id
 		WHERE ur.user_id = $1`
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
@@ -297,8 +297,8 @@ func (r *repository) GetUserRoles(ctx context.Context, userID int) ([]string, er
 func (r *repository) GetGroupRoles(ctx context.Context, groupID int) ([]string, error) {
 	query := `
 		SELECT r.name
-		FROM roles r
-		INNER JOIN group_roles gr ON r.id = gr.role_id
+		FROM organizations.roles r
+		INNER JOIN organizations.group_roles gr ON r.id = gr.role_id
 		WHERE gr.group_id = $1`
 
 	rows, err := r.db.QueryContext(ctx, query, groupID)
@@ -323,15 +323,15 @@ func (r *repository) GetGroupRoles(ctx context.Context, groupID int) ([]string, 
 func (r *repository) GetAllUserRoles(ctx context.Context, userID int) ([]string, error) {
 	query := `
 		SELECT DISTINCT r.name
-		FROM roles r
+		FROM organizations.roles r
 		WHERE r.id IN (
 			-- Direct user roles
-			SELECT role_id FROM user_roles WHERE user_id = $1
+			SELECT role_id FROM organizations.user_roles WHERE user_id = $1
 			UNION
 			-- Group roles (inherited through group membership)
 			SELECT gr.role_id
-			FROM group_roles gr
-			INNER JOIN group_users gu ON gr.group_id = gu.group_id
+			FROM organizations.group_roles gr
+			INNER JOIN organizations.group_users gu ON gr.group_id = gu.group_id
 			WHERE gu.user_id = $1
 		)
 		ORDER BY r.name`
@@ -358,7 +358,7 @@ func (r *repository) GetAllUserRoles(ctx context.Context, userID int) ([]string,
 func (r *repository) GetUserByID(ctx context.Context, userID int) (*AuthUser, error) {
 	query := `
 		SELECT id, public_id, login_id, email, name, password_hash, is_deleted
-		FROM users
+		FROM organizations.users
 		WHERE id = $1 AND is_deleted = false`
 
 	user := &AuthUser{}

@@ -184,11 +184,11 @@ func TestMiddleware_Authorize(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "sysadmin bypass",
+			name:           "full_access bypass",
 			method:         "POST",
 			path:           "/users",
 			routePattern:   "/users",
-			userRoles:      []string{"sysadmin"},
+			userRoles:      []string{"full_access"},
 			expectedStatus: http.StatusOK,
 		},
 		{
