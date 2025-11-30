@@ -103,6 +103,472 @@ definitions:
         example: Permissions refreshed successfully
         type: string
     type: object
+  tickets.AddTagRequest:
+    properties:
+      category:
+        example: priority
+        type: string
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  tickets.ContentFormat:
+    enum:
+    - PLAIN_TEXT
+    - MARKDOWN
+    - HTML
+    - NONE
+    type: string
+    x-enum-varnames:
+    - ContentFormatPlainText
+    - ContentFormatMarkdown
+    - ContentFormatHTML
+    - ContentFormatNone
+  tickets.CreateEntryRequest:
+    properties:
+      body:
+        example: This is the entry content
+        type: string
+      entry_type:
+        allOf:
+        - $ref: '#/definitions/tickets.EntryType'
+        example: COMMENT
+      format:
+        allOf:
+        - $ref: '#/definitions/tickets.ContentFormat'
+        example: MARKDOWN
+      parent_entry_id:
+        example: 0
+        type: integer
+      payload:
+        type: object
+      references:
+        items:
+          $ref: '#/definitions/tickets.CreateReferenceRequest'
+        type: array
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  tickets.CreateReferenceRequest:
+    properties:
+      target_entry_id:
+        example: 1
+        type: integer
+      target_ticket_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      target_user_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+    type: object
+  tickets.CreateTagRequest:
+    properties:
+      color_code:
+        example: '#FF0000'
+        type: string
+      name:
+        example: urgent
+        type: string
+    type: object
+  tickets.CreateTicketRequest:
+    properties:
+      assigned_user_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      due_date:
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      initial_entry:
+        allOf:
+        - $ref: '#/definitions/tickets.CreateEntryRequest'
+        description: Initial entry (required)
+      priority:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketPriority'
+        example: MEDIUM
+      request_type:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketRequestType'
+        example: BUG
+      status:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketStatus'
+        example: OPEN
+      tag_ids:
+        items:
+          type: integer
+        type: array
+      title:
+        example: Bug in login page
+        type: string
+    type: object
+  tickets.EntryDetailResponse:
+    properties:
+      author_user_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      author_user_name:
+        type: object
+      body:
+        example: This is the entry content
+        type: string
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      entry_type:
+        allOf:
+        - $ref: '#/definitions/tickets.EntryType'
+        example: COMMENT
+      format:
+        allOf:
+        - $ref: '#/definitions/tickets.ContentFormat'
+        example: MARKDOWN
+      id:
+        example: 1
+        type: integer
+      parent_entry_id:
+        example: 0
+        type: integer
+      payload:
+        type: object
+      references:
+        items:
+          $ref: '#/definitions/tickets.ReferenceResponse'
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/tickets.TagResponse'
+        type: array
+      ticket_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  tickets.EntryListResponse:
+    properties:
+      author_user_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      author_user_name:
+        type: object
+      body:
+        example: This is the entry content
+        type: string
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      entry_type:
+        allOf:
+        - $ref: '#/definitions/tickets.EntryType'
+        example: COMMENT
+      format:
+        allOf:
+        - $ref: '#/definitions/tickets.ContentFormat'
+        example: MARKDOWN
+      id:
+        example: 1
+        type: integer
+      parent_entry_id:
+        example: 0
+        type: integer
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  tickets.EntryType:
+    enum:
+    - COMMENT
+    - FILE
+    - SCHEDULE
+    - EVENT
+    type: string
+    x-enum-varnames:
+    - EntryTypeComment
+    - EntryTypeFile
+    - EntryTypeSchedule
+    - EntryTypeEvent
+  tickets.ErrorResponse:
+    properties:
+      error:
+        example: Bad Request
+        type: string
+      message:
+        example: Invalid request body
+        type: string
+    type: object
+  tickets.ReferenceResponse:
+    properties:
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      target_entry_id:
+        example: 1
+        type: integer
+      target_ticket_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      target_type:
+        example: entry
+        type: string
+      target_user_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      target_user_name:
+        type: object
+    type: object
+  tickets.SearchTicketRequest:
+    properties:
+      assigned_user_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      due_date_from:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      due_date_to:
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      priority:
+        items:
+          $ref: '#/definitions/tickets.TicketPriority'
+        type: array
+      query:
+        example: login bug
+        type: string
+      request_type:
+        items:
+          $ref: '#/definitions/tickets.TicketRequestType'
+        type: array
+      status:
+        items:
+          $ref: '#/definitions/tickets.TicketStatus'
+        type: array
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  tickets.SuccessResponse:
+    properties:
+      message:
+        example: Operation completed successfully
+        type: string
+    type: object
+  tickets.TagListResponseWrapper:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/tickets.TagResponse'
+        type: array
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total_count:
+        example: 100
+        type: integer
+      total_pages:
+        example: 10
+        type: integer
+    type: object
+  tickets.TagResponse:
+    properties:
+      category:
+        example: priority
+        type: string
+      color_code:
+        example: '#FF0000'
+        type: string
+      id:
+        example: 1
+        type: integer
+      name:
+        example: urgent
+        type: string
+    type: object
+  tickets.TicketDetailResponse:
+    properties:
+      assigned_user_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      assigned_user_name:
+        type: object
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      due_date:
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      entries:
+        items:
+          $ref: '#/definitions/tickets.EntryListResponse'
+        type: array
+      id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      priority:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketPriority'
+        example: HIGH
+      request_type:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketRequestType'
+        example: BUG
+      status:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketStatus'
+        example: OPEN
+      tags:
+        items:
+          $ref: '#/definitions/tickets.TagResponse'
+        type: array
+      title:
+        example: Bug in login page
+        type: string
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  tickets.TicketListResponse:
+    properties:
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      due_date:
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      priority:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketPriority'
+        example: HIGH
+      request_type:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketRequestType'
+        example: BUG
+      status:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketStatus'
+        example: OPEN
+      title:
+        example: Bug in login page
+        type: string
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  tickets.TicketListResponseWrapper:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/tickets.TicketListResponse'
+        type: array
+      limit:
+        example: 10
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total_count:
+        example: 100
+        type: integer
+      total_pages:
+        example: 10
+        type: integer
+    type: object
+  tickets.TicketPriority:
+    enum:
+    - LOW
+    - MEDIUM
+    - HIGH
+    - CRITICAL
+    type: string
+    x-enum-varnames:
+    - TicketPriorityLow
+    - TicketPriorityMedium
+    - TicketPriorityHigh
+    - TicketPriorityCritical
+  tickets.TicketRequestType:
+    enum:
+    - BUG
+    - MAINTENANCE
+    - FEATURE_REQUEST
+    - GENERAL_INQUIRY
+    type: string
+    x-enum-varnames:
+    - TicketRequestTypeBug
+    - TicketRequestTypeMaintenance
+    - TicketRequestTypeFeatureRequest
+    - TicketRequestTypeGeneralInquiry
+  tickets.TicketStatus:
+    enum:
+    - OPEN
+    - WAITING_FOR_INFO
+    - IN_PROGRESS
+    - RESOLVED
+    - CLOSED
+    - REOPENED
+    type: string
+    x-enum-varnames:
+    - TicketStatusOpen
+    - TicketStatusWaitingForInfo
+    - TicketStatusInProgress
+    - TicketStatusResolved
+    - TicketStatusClosed
+    - TicketStatusReopened
+  tickets.UpdateEntryRequest:
+    properties:
+      body:
+        example: Updated content
+        type: string
+      format:
+        allOf:
+        - $ref: '#/definitions/tickets.ContentFormat'
+        example: MARKDOWN
+      payload:
+        type: object
+    type: object
+  tickets.UpdateTagRequest:
+    properties:
+      color_code:
+        example: '#FF5500'
+        type: string
+      name:
+        example: very-urgent
+        type: string
+    type: object
+  tickets.UpdateTicketRequest:
+    properties:
+      assigned_user_id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      due_date:
+        example: "2024-12-31T23:59:59Z"
+        type: string
+      priority:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketPriority'
+        example: HIGH
+      request_type:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketRequestType'
+        example: FEATURE_REQUEST
+      status:
+        allOf:
+        - $ref: '#/definitions/tickets.TicketStatus'
+        example: IN_PROGRESS
+      title:
+        example: Updated title
+        type: string
+    type: object
   users.CreateUserRequest:
     properties:
       contact_mobile:
@@ -492,6 +958,184 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /entries/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Performs a soft delete on an entry
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete entry
+      tags:
+      - entries
+    get:
+      consumes:
+      - application/json
+      description: Retrieves detailed entry information including tags and references
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.EntryDetailResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get entry by ID
+      tags:
+      - entries
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing entry
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Entry data to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.UpdateEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.EntryListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update entry
+      tags:
+      - entries
+  /entries/{id}/tags:
+    post:
+      consumes:
+      - application/json
+      description: Adds tags to an entry
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Tags to add
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.AddTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add tags to entry
+      tags:
+      - entries
+  /entries/{id}/tags/{tagId}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a tag from an entry
+      parameters:
+      - description: Entry ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Tag ID
+        in: path
+        name: tagId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove tag from entry
+      tags:
+      - entries
   /health:
     get:
       consumes:
@@ -509,6 +1153,495 @@ paths:
       summary: Health Check
       tags:
       - health
+  /tags:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of tags
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.TagListResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List tags
+      tags:
+      - tags
+    post:
+      consumes:
+      - application/json
+      description: Creates a new tag
+      parameters:
+      - description: Tag data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.CreateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/tickets.TagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new tag
+      tags:
+      - tags
+  /tags/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Performs a soft delete on a tag
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete tag
+      tags:
+      - tags
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a tag by its ID
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.TagResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get tag by ID
+      tags:
+      - tags
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing tag
+      parameters:
+      - description: Tag ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Tag data to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.UpdateTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.TagResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update tag
+      tags:
+      - tags
+  /tickets:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of tickets with simplified response
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.TicketListResponseWrapper'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List tickets
+      tags:
+      - tickets
+    post:
+      consumes:
+      - application/json
+      description: Creates a new ticket with an initial entry. Title and initial_entry
+        are required.
+      parameters:
+      - description: Ticket data with initial entry
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.CreateTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/tickets.TicketDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new ticket
+      tags:
+      - tickets
+  /tickets/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a ticket and all its entries
+      parameters:
+      - description: Ticket Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete ticket
+      tags:
+      - tickets
+    get:
+      consumes:
+      - application/json
+      description: Retrieves detailed ticket information including entries and tags
+      parameters:
+      - description: Ticket Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.TicketDetailResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get ticket by ID
+      tags:
+      - tickets
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing ticket
+      parameters:
+      - description: Ticket Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Ticket data to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.UpdateTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.TicketListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update ticket
+      tags:
+      - tickets
+  /tickets/{id}/entries:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new entry for a ticket
+      parameters:
+      - description: Ticket Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Entry data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.CreateEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/tickets.EntryDetailResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new entry
+      tags:
+      - entries
+  /tickets/{id}/tags:
+    post:
+      consumes:
+      - application/json
+      description: Adds tags to a ticket
+      parameters:
+      - description: Ticket Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tags to add
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.AddTagRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Add tags to ticket
+      tags:
+      - tickets
+  /tickets/{id}/tags/{tagId}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a tag from a ticket
+      parameters:
+      - description: Ticket Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tag ID
+        in: path
+        name: tagId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.SuccessResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Remove tag from ticket
+      tags:
+      - tickets
+  /tickets/search:
+    post:
+      consumes:
+      - application/json
+      description: Searches for tickets based on various criteria
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search criteria
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/tickets.SearchTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/tickets.TicketListResponseWrapper'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/tickets.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Search tickets
+      tags:
+      - tickets
   /users:
     get:
       consumes:

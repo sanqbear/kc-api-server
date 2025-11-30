@@ -342,6 +342,284 @@ const docTemplate = `{
                 }
             }
         },
+        "/entries/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves detailed entry information including tags and references",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "entries"
+                ],
+                "summary": "Get entry by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.EntryDetailResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing entry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "entries"
+                ],
+                "summary": "Update entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Entry data to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.UpdateEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.EntryListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Performs a soft delete on an entry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "entries"
+                ],
+                "summary": "Delete entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.SuccessResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/entries/{id}/tags": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds tags to an entry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "entries"
+                ],
+                "summary": "Add tags to entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Tags to add",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.AddTagRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/entries/{id}/tags/{tagId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes a tag from an entry",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "entries"
+                ],
+                "summary": "Remove tag from entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Entry ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "tagId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.SuccessResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns the health status of the service and database connection",
@@ -363,6 +641,769 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/tags": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a paginated list of tags",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "List tags",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TagListResponseWrapper"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new tag",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Create a new tag",
+                "parameters": [
+                    {
+                        "description": "Tag data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.CreateTagRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TagResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tags/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a tag by its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Get tag by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TagResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing tag",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Update tag",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Tag data to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.UpdateTagRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TagResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Performs a soft delete on a tag",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "Delete tag",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.SuccessResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a paginated list of tickets with simplified response",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "List tickets",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TicketListResponseWrapper"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new ticket with an initial entry. Title and initial_entry are required.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Create a new ticket",
+                "parameters": [
+                    {
+                        "description": "Ticket data with initial entry",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.CreateTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TicketDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets/search": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Searches for tickets based on various criteria",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Search tickets",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Search criteria",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.SearchTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TicketListResponseWrapper"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves detailed ticket information including entries and tags",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Get ticket by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticket Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TicketDetailResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing ticket",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Update ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticket Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Ticket data to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.UpdateTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.TicketListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a ticket and all its entries",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Delete ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticket Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.SuccessResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets/{id}/entries": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new entry for a ticket",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "entries"
+                ],
+                "summary": "Create a new entry",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticket Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Entry data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.CreateEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.EntryDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets/{id}/tags": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds tags to a ticket",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Add tags to ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticket Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Tags to add",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/tickets.AddTagRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/tickets/{id}/tags/{tagId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Removes a tag from a ticket",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Remove tag from ticket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Ticket Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Tag ID",
+                        "name": "tagId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.SuccessResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/tickets.ErrorResponse"
                         }
                     }
                 }
@@ -853,6 +1894,705 @@ const docTemplate = `{
                 "message": {
                     "type": "string",
                     "example": "Permissions refreshed successfully"
+                }
+            }
+        },
+        "tickets.AddTagRequest": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "example": "priority"
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "tickets.ContentFormat": {
+            "type": "string",
+            "enum": [
+                "PLAIN_TEXT",
+                "MARKDOWN",
+                "HTML",
+                "NONE"
+            ],
+            "x-enum-varnames": [
+                "ContentFormatPlainText",
+                "ContentFormatMarkdown",
+                "ContentFormatHTML",
+                "ContentFormatNone"
+            ]
+        },
+        "tickets.CreateEntryRequest": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "This is the entry content"
+                },
+                "entry_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.EntryType"
+                        }
+                    ],
+                    "example": "COMMENT"
+                },
+                "format": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.ContentFormat"
+                        }
+                    ],
+                    "example": "MARKDOWN"
+                },
+                "parent_entry_id": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "payload": {
+                    "type": "object"
+                },
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.CreateReferenceRequest"
+                    }
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "tickets.CreateReferenceRequest": {
+            "type": "object",
+            "properties": {
+                "target_entry_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "target_ticket_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "target_user_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                }
+            }
+        },
+        "tickets.CreateTagRequest": {
+            "type": "object",
+            "properties": {
+                "color_code": {
+                    "type": "string",
+                    "example": "#FF0000"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "urgent"
+                }
+            }
+        },
+        "tickets.CreateTicketRequest": {
+            "type": "object",
+            "properties": {
+                "assigned_user_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "due_date": {
+                    "type": "string",
+                    "example": "2024-12-31T23:59:59Z"
+                },
+                "initial_entry": {
+                    "description": "Initial entry (required)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.CreateEntryRequest"
+                        }
+                    ]
+                },
+                "priority": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketPriority"
+                        }
+                    ],
+                    "example": "MEDIUM"
+                },
+                "request_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketRequestType"
+                        }
+                    ],
+                    "example": "BUG"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketStatus"
+                        }
+                    ],
+                    "example": "OPEN"
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Bug in login page"
+                }
+            }
+        },
+        "tickets.EntryDetailResponse": {
+            "type": "object",
+            "properties": {
+                "author_user_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "author_user_name": {
+                    "type": "object"
+                },
+                "body": {
+                    "type": "string",
+                    "example": "This is the entry content"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "entry_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.EntryType"
+                        }
+                    ],
+                    "example": "COMMENT"
+                },
+                "format": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.ContentFormat"
+                        }
+                    ],
+                    "example": "MARKDOWN"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "parent_entry_id": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "payload": {
+                    "type": "object"
+                },
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.ReferenceResponse"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.TagResponse"
+                    }
+                },
+                "ticket_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "tickets.EntryListResponse": {
+            "type": "object",
+            "properties": {
+                "author_user_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "author_user_name": {
+                    "type": "object"
+                },
+                "body": {
+                    "type": "string",
+                    "example": "This is the entry content"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "entry_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.EntryType"
+                        }
+                    ],
+                    "example": "COMMENT"
+                },
+                "format": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.ContentFormat"
+                        }
+                    ],
+                    "example": "MARKDOWN"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "parent_entry_id": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "tickets.EntryType": {
+            "type": "string",
+            "enum": [
+                "COMMENT",
+                "FILE",
+                "SCHEDULE",
+                "EVENT"
+            ],
+            "x-enum-varnames": [
+                "EntryTypeComment",
+                "EntryTypeFile",
+                "EntryTypeSchedule",
+                "EntryTypeEvent"
+            ]
+        },
+        "tickets.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Bad Request"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid request body"
+                }
+            }
+        },
+        "tickets.ReferenceResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "target_entry_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "target_ticket_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "target_type": {
+                    "type": "string",
+                    "example": "entry"
+                },
+                "target_user_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "target_user_name": {
+                    "type": "object"
+                }
+            }
+        },
+        "tickets.SearchTicketRequest": {
+            "type": "object",
+            "properties": {
+                "assigned_user_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "due_date_from": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "due_date_to": {
+                    "type": "string",
+                    "example": "2024-12-31T23:59:59Z"
+                },
+                "priority": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.TicketPriority"
+                    }
+                },
+                "query": {
+                    "type": "string",
+                    "example": "login bug"
+                },
+                "request_type": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.TicketRequestType"
+                    }
+                },
+                "status": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.TicketStatus"
+                    }
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "tickets.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Operation completed successfully"
+                }
+            }
+        },
+        "tickets.TagListResponseWrapper": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.TagResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "tickets.TagResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "example": "priority"
+                },
+                "color_code": {
+                    "type": "string",
+                    "example": "#FF0000"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "urgent"
+                }
+            }
+        },
+        "tickets.TicketDetailResponse": {
+            "type": "object",
+            "properties": {
+                "assigned_user_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "assigned_user_name": {
+                    "type": "object"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "due_date": {
+                    "type": "string",
+                    "example": "2024-12-31T23:59:59Z"
+                },
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.EntryListResponse"
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "priority": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketPriority"
+                        }
+                    ],
+                    "example": "HIGH"
+                },
+                "request_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketRequestType"
+                        }
+                    ],
+                    "example": "BUG"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketStatus"
+                        }
+                    ],
+                    "example": "OPEN"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.TagResponse"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Bug in login page"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "tickets.TicketListResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                },
+                "due_date": {
+                    "type": "string",
+                    "example": "2024-12-31T23:59:59Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "priority": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketPriority"
+                        }
+                    ],
+                    "example": "HIGH"
+                },
+                "request_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketRequestType"
+                        }
+                    ],
+                    "example": "BUG"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketStatus"
+                        }
+                    ],
+                    "example": "OPEN"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Bug in login page"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-01-01T00:00:00Z"
+                }
+            }
+        },
+        "tickets.TicketListResponseWrapper": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/tickets.TicketListResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 10
+                }
+            }
+        },
+        "tickets.TicketPriority": {
+            "type": "string",
+            "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "CRITICAL"
+            ],
+            "x-enum-varnames": [
+                "TicketPriorityLow",
+                "TicketPriorityMedium",
+                "TicketPriorityHigh",
+                "TicketPriorityCritical"
+            ]
+        },
+        "tickets.TicketRequestType": {
+            "type": "string",
+            "enum": [
+                "BUG",
+                "MAINTENANCE",
+                "FEATURE_REQUEST",
+                "GENERAL_INQUIRY"
+            ],
+            "x-enum-varnames": [
+                "TicketRequestTypeBug",
+                "TicketRequestTypeMaintenance",
+                "TicketRequestTypeFeatureRequest",
+                "TicketRequestTypeGeneralInquiry"
+            ]
+        },
+        "tickets.TicketStatus": {
+            "type": "string",
+            "enum": [
+                "OPEN",
+                "WAITING_FOR_INFO",
+                "IN_PROGRESS",
+                "RESOLVED",
+                "CLOSED",
+                "REOPENED"
+            ],
+            "x-enum-varnames": [
+                "TicketStatusOpen",
+                "TicketStatusWaitingForInfo",
+                "TicketStatusInProgress",
+                "TicketStatusResolved",
+                "TicketStatusClosed",
+                "TicketStatusReopened"
+            ]
+        },
+        "tickets.UpdateEntryRequest": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Updated content"
+                },
+                "format": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.ContentFormat"
+                        }
+                    ],
+                    "example": "MARKDOWN"
+                },
+                "payload": {
+                    "type": "object"
+                }
+            }
+        },
+        "tickets.UpdateTagRequest": {
+            "type": "object",
+            "properties": {
+                "color_code": {
+                    "type": "string",
+                    "example": "#FF5500"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "very-urgent"
+                }
+            }
+        },
+        "tickets.UpdateTicketRequest": {
+            "type": "object",
+            "properties": {
+                "assigned_user_id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "due_date": {
+                    "type": "string",
+                    "example": "2024-12-31T23:59:59Z"
+                },
+                "priority": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketPriority"
+                        }
+                    ],
+                    "example": "HIGH"
+                },
+                "request_type": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketRequestType"
+                        }
+                    ],
+                    "example": "FEATURE_REQUEST"
+                },
+                "status": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/tickets.TicketStatus"
+                        }
+                    ],
+                    "example": "IN_PROGRESS"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Updated title"
                 }
             }
         },

@@ -14,6 +14,7 @@ import (
 	"kc-api/internal/auth"
 	"kc-api/internal/database"
 	"kc-api/internal/rbac"
+	"kc-api/internal/tickets"
 	"kc-api/internal/users"
 )
 
@@ -27,6 +28,7 @@ type Server struct {
 	rbacHandler       *rbac.Handler
 	rbacMiddleware    *rbac.Middleware
 	permissionManager *rbac.PermissionManager
+	ticketHandler     *tickets.Handler
 }
 
 func NewServer() *http.Server {
@@ -65,6 +67,11 @@ func NewServer() *http.Server {
 		log.Printf("Warning: Failed to load initial permissions: %v", err)
 	}
 
+	// Initialize tickets domain with DI
+	ticketRepo := tickets.NewRepository(db.DB())
+	ticketService := tickets.NewService(ticketRepo)
+	ticketHandler := tickets.NewHandler(ticketService)
+
 	NewServer := &Server{
 		port:              port,
 		db:                db,
@@ -74,6 +81,7 @@ func NewServer() *http.Server {
 		rbacHandler:       rbacHandler,
 		rbacMiddleware:    rbacMiddleware,
 		permissionManager: permissionManager,
+		ticketHandler:     ticketHandler,
 	}
 
 	// Declare Server config

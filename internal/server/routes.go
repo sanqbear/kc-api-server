@@ -43,6 +43,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 		// RBAC admin routes (refresh-permissions) - requires sysadmin role via RBAC
 		s.rbacHandler.RegisterRoutes(r)
+
+		// Protected ticket routes
+		s.ticketHandler.RegisterRoutes(r)
 	})
 
 	// Swagger UI route
