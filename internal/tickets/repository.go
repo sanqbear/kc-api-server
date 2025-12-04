@@ -116,7 +116,7 @@ func (r *repository) GetTicketDetailByPublicID(ctx context.Context, publicID str
 
 	var ticketID int64
 	var assignedUserPublicID sql.NullString
-	var assignedUserName json.RawMessage
+	var assignedUserName sql.NullString
 	detail := &TicketDetailResponse{}
 
 	err := r.db.QueryRowContext(ctx, query, publicID).Scan(
@@ -138,7 +138,9 @@ func (r *repository) GetTicketDetailByPublicID(ctx context.Context, publicID str
 
 	if assignedUserPublicID.Valid {
 		detail.AssignedUserID = &assignedUserPublicID.String
-		detail.AssignedUserName = assignedUserName
+		if assignedUserName.Valid {
+			detail.AssignedUserName = json.RawMessage(assignedUserName.String)
+		}
 	}
 
 	// Get tags
@@ -453,7 +455,7 @@ func (r *repository) GetEntryDetailByID(ctx context.Context, entryID int64) (*En
 		WHERE e.id = $1 AND e.is_deleted = false`
 
 	var authorUserPublicID sql.NullString
-	var authorUserName json.RawMessage
+	var authorUserName sql.NullString
 	var body sql.NullString
 	var parentEntryID sql.NullInt64
 	detail := &EntryDetailResponse{}
@@ -483,7 +485,9 @@ func (r *repository) GetEntryDetailByID(ctx context.Context, entryID int64) (*En
 	}
 	if authorUserPublicID.Valid {
 		detail.AuthorUserID = &authorUserPublicID.String
-		detail.AuthorUserName = authorUserName
+		if authorUserName.Valid {
+			detail.AuthorUserName = json.RawMessage(authorUserName.String)
+		}
 	}
 
 	// Get tags
@@ -525,7 +529,7 @@ func (r *repository) ListEntriesByTicketID(ctx context.Context, ticketID int64) 
 		var body sql.NullString
 		var parentEntryID sql.NullInt64
 		var authorUserPublicID sql.NullString
-		var authorUserName json.RawMessage
+		var authorUserName sql.NullString
 
 		if err := rows.Scan(
 			&entry.ID,
@@ -549,7 +553,9 @@ func (r *repository) ListEntriesByTicketID(ctx context.Context, ticketID int64) 
 		}
 		if authorUserPublicID.Valid {
 			entry.AuthorUserID = &authorUserPublicID.String
-			entry.AuthorUserName = authorUserName
+			if authorUserName.Valid {
+				entry.AuthorUserName = json.RawMessage(authorUserName.String)
+			}
 		}
 
 		entries = append(entries, entry)
@@ -945,7 +951,7 @@ func (r *repository) GetReferencesByEntryID(ctx context.Context, entryID int64) 
 		var targetEntryID sql.NullInt64
 		var targetTicketPublicID sql.NullString
 		var targetUserPublicID sql.NullString
-		var targetUserName json.RawMessage
+		var targetUserName sql.NullString
 
 		if err := rows.Scan(
 			&targetEntryID,
@@ -966,7 +972,9 @@ func (r *repository) GetReferencesByEntryID(ctx context.Context, entryID int64) 
 		} else if targetUserPublicID.Valid {
 			ref.TargetType = "user"
 			ref.TargetUserID = &targetUserPublicID.String
-			ref.TargetUserName = targetUserName
+			if targetUserName.Valid {
+				ref.TargetUserName = json.RawMessage(targetUserName.String)
+			}
 		}
 
 		refs = append(refs, ref)

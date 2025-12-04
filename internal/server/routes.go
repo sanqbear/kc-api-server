@@ -46,6 +46,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 		// Protected ticket routes
 		s.ticketHandler.RegisterRoutes(r)
+
+		// EWS plugin routes (optional - only registered if configured)
+		if s.ewsHandler != nil {
+			s.ewsHandler.RegisterRoutes(r)
+		}
 	})
 
 	// Swagger UI route

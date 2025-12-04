@@ -13,6 +13,7 @@ import (
 
 	"kc-api/internal/auth"
 	"kc-api/internal/database"
+	"kc-api/internal/plugins/ews"
 	"kc-api/internal/rbac"
 	"kc-api/internal/tickets"
 	"kc-api/internal/users"
@@ -29,6 +30,7 @@ type Server struct {
 	rbacMiddleware    *rbac.Middleware
 	permissionManager *rbac.PermissionManager
 	ticketHandler     *tickets.Handler
+	ewsHandler        *ews.Handler
 }
 
 func NewServer() *http.Server {
@@ -72,6 +74,23 @@ func NewServer() *http.Server {
 	ticketService := tickets.NewService(ticketRepo)
 	ticketHandler := tickets.NewHandler(ticketService)
 
+	// Initialize EWS plugin (optional)
+	var ewsHandler *ews.Handler
+	ewsConfig, err := ews.LoadConfig()
+	if err != nil {
+		log.Printf("Warning: Failed to load EWS config: %v", err)
+	} else if ewsConfig != nil {
+		ewsClient, err := ews.NewClient(ewsConfig)
+		if err != nil {
+			log.Printf("Warning: Failed to create EWS client: %v", err)
+		} else {
+			ewsHandler = ews.NewHandler(ewsClient)
+			log.Println("EWS plugin initialized successfully")
+		}
+	} else {
+		log.Println("EWS plugin not configured (EWS_SERVER_URL not set)")
+	}
+
 	NewServer := &Server{
 		port:              port,
 		db:                db,
@@ -82,6 +101,7 @@ func NewServer() *http.Server {
 		rbacMiddleware:    rbacMiddleware,
 		permissionManager: permissionManager,
 		ticketHandler:     ticketHandler,
+		ewsHandler:        ewsHandler,
 	}
 
 	// Declare Server config
