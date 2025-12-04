@@ -17,6 +17,17 @@ type Client struct {
 	config     *Config
 	httpClient *http.Client
 	serverURL  string
+	authUser   string // Username for authentication (may include domain)
+}
+
+// getAuthUsername returns the username formatted for authentication
+// If domain is configured, returns "DOMAIN\username" format for NTLM
+// Otherwise returns just the username for Basic auth
+func getAuthUsername(cfg *Config) string {
+	if cfg.Domain != "" {
+		return cfg.Domain + "\\" + cfg.ImpersonationUsername
+	}
+	return cfg.ImpersonationUsername
 }
 
 // NewClient creates a new EWS client instance
@@ -46,6 +57,7 @@ func NewClient(cfg *Config) (*Client, error) {
 		config:     cfg,
 		httpClient: httpClient,
 		serverURL:  cfg.ServerURL,
+		authUser:   getAuthUsername(cfg),
 	}, nil
 }
 
@@ -262,9 +274,9 @@ func (c *Client) sendFindItemRequest(ctx context.Context, xmlRequest []byte) (*F
 		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
-	// Set headers
+	// Set headers and authentication
 	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
-	req.SetBasicAuth(c.config.ImpersonationUsername, c.config.ImpersonationPassword)
+	req.SetBasicAuth(c.authUser, c.config.ImpersonationPassword)
 
 	// Execute request
 	resp, err := c.httpClient.Do(req)
@@ -332,9 +344,9 @@ func (c *Client) sendGetItemRequest(ctx context.Context, xmlRequest []byte) (*Ge
 		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
-	// Set headers
+	// Set headers and authentication
 	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
-	req.SetBasicAuth(c.config.ImpersonationUsername, c.config.ImpersonationPassword)
+	req.SetBasicAuth(c.authUser, c.config.ImpersonationPassword)
 
 	// Execute request
 	resp, err := c.httpClient.Do(req)

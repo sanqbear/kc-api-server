@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"kc-api/internal/auth"
 )
 
 // Handler handles HTTP requests for ticket operations
@@ -112,7 +113,10 @@ func (h *Handler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.CreateTicket(r.Context(), &req, nil)
+	// Get current user ID from context
+	authorUserID := auth.GetUserIDFromContext(r.Context())
+
+	result, err := h.service.CreateTicket(r.Context(), &req, authorUserID)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidTitle):
@@ -382,7 +386,10 @@ func (h *Handler) CreateEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.service.CreateEntry(r.Context(), ticketID, &req, nil)
+	// Get current user ID from context
+	authorUserID := auth.GetUserIDFromContext(r.Context())
+
+	result, err := h.service.CreateEntry(r.Context(), ticketID, &req, authorUserID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
 			respondError(w, http.StatusNotFound, "Not Found", "Ticket not found")

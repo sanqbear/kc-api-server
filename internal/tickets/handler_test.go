@@ -14,13 +14,13 @@ import (
 
 // MockService is a mock implementation of the Service interface for testing
 type MockService struct {
-	CreateTicketFunc        func(ctx context.Context, req *CreateTicketRequest, authorUserID *int64) (*TicketDetailResponse, error)
+	CreateTicketFunc        func(ctx context.Context, req *CreateTicketRequest, authorUserPublicID string) (*TicketDetailResponse, error)
 	GetTicketByIDFunc       func(ctx context.Context, publicID string) (*TicketDetailResponse, error)
 	ListTicketsFunc         func(ctx context.Context, page, limit int) (*TicketListResponseWrapper, error)
 	UpdateTicketFunc        func(ctx context.Context, publicID string, req *UpdateTicketRequest) (*TicketListResponse, error)
 	DeleteTicketFunc        func(ctx context.Context, publicID string) error
 	SearchTicketsFunc       func(ctx context.Context, criteria *SearchTicketRequest, page, limit int) (*TicketListResponseWrapper, error)
-	CreateEntryFunc         func(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserID *int64) (*EntryDetailResponse, error)
+	CreateEntryFunc         func(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserPublicID string) (*EntryDetailResponse, error)
 	GetEntryByIDFunc        func(ctx context.Context, entryID int64) (*EntryDetailResponse, error)
 	UpdateEntryFunc         func(ctx context.Context, entryID int64, req *UpdateEntryRequest) (*EntryListResponse, error)
 	DeleteEntryFunc         func(ctx context.Context, entryID int64) error
@@ -35,9 +35,9 @@ type MockService struct {
 	RemoveTagFromEntryFunc  func(ctx context.Context, entryID int64, tagID int64) error
 }
 
-func (m *MockService) CreateTicket(ctx context.Context, req *CreateTicketRequest, authorUserID *int64) (*TicketDetailResponse, error) {
+func (m *MockService) CreateTicket(ctx context.Context, req *CreateTicketRequest, authorUserPublicID string) (*TicketDetailResponse, error) {
 	if m.CreateTicketFunc != nil {
-		return m.CreateTicketFunc(ctx, req, authorUserID)
+		return m.CreateTicketFunc(ctx, req, authorUserPublicID)
 	}
 	return nil, nil
 }
@@ -77,9 +77,9 @@ func (m *MockService) SearchTickets(ctx context.Context, criteria *SearchTicketR
 	return nil, nil
 }
 
-func (m *MockService) CreateEntry(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserID *int64) (*EntryDetailResponse, error) {
+func (m *MockService) CreateEntry(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserPublicID string) (*EntryDetailResponse, error) {
 	if m.CreateEntryFunc != nil {
-		return m.CreateEntryFunc(ctx, ticketPublicID, req, authorUserID)
+		return m.CreateEntryFunc(ctx, ticketPublicID, req, authorUserPublicID)
 	}
 	return nil, nil
 }
@@ -295,7 +295,7 @@ func TestHandler_CreateTicket(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := &MockService{
-				CreateTicketFunc: func(ctx context.Context, req *CreateTicketRequest, authorUserID *int64) (*TicketDetailResponse, error) {
+				CreateTicketFunc: func(ctx context.Context, req *CreateTicketRequest, authorUserPublicID string) (*TicketDetailResponse, error) {
 					return tt.mockReturn, tt.mockError
 				},
 			}
@@ -635,7 +635,7 @@ func TestHandler_CreateEntry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockService := &MockService{
-				CreateEntryFunc: func(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserID *int64) (*EntryDetailResponse, error) {
+				CreateEntryFunc: func(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserPublicID string) (*EntryDetailResponse, error) {
 					return tt.mockReturn, tt.mockError
 				},
 			}

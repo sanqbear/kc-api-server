@@ -21,7 +21,7 @@ var (
 // Service defines the interface for ticket business logic
 type Service interface {
 	// Ticket operations
-	CreateTicket(ctx context.Context, req *CreateTicketRequest, authorUserID *int64) (*TicketDetailResponse, error)
+	CreateTicket(ctx context.Context, req *CreateTicketRequest, authorUserPublicID string) (*TicketDetailResponse, error)
 	GetTicketByID(ctx context.Context, publicID string) (*TicketDetailResponse, error)
 	ListTickets(ctx context.Context, page, limit int) (*TicketListResponseWrapper, error)
 	UpdateTicket(ctx context.Context, publicID string, req *UpdateTicketRequest) (*TicketListResponse, error)
@@ -29,7 +29,7 @@ type Service interface {
 	SearchTickets(ctx context.Context, criteria *SearchTicketRequest, page, limit int) (*TicketListResponseWrapper, error)
 
 	// Entry operations
-	CreateEntry(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserID *int64) (*EntryDetailResponse, error)
+	CreateEntry(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserPublicID string) (*EntryDetailResponse, error)
 	GetEntryByID(ctx context.Context, entryID int64) (*EntryDetailResponse, error)
 	UpdateEntry(ctx context.Context, entryID int64, req *UpdateEntryRequest) (*EntryListResponse, error)
 	DeleteEntry(ctx context.Context, entryID int64) error
@@ -61,7 +61,7 @@ func NewService(repo Repository) Service {
 
 // -------------------- Ticket Operations --------------------
 
-func (s *service) CreateTicket(ctx context.Context, req *CreateTicketRequest, authorUserID *int64) (*TicketDetailResponse, error) {
+func (s *service) CreateTicket(ctx context.Context, req *CreateTicketRequest, authorUserPublicID string) (*TicketDetailResponse, error) {
 	if req.Title == "" {
 		return nil, ErrInvalidTitle
 	}
@@ -131,8 +131,13 @@ func (s *service) CreateTicket(ctx context.Context, req *CreateTicketRequest, au
 		Payload:   payload,
 	}
 
-	if authorUserID != nil {
-		entry.AuthorUserID = sql.NullInt64{Int64: *authorUserID, Valid: true}
+	// Set author user ID if provided
+	if authorUserPublicID != "" {
+		authorUserID, err := s.repo.GetUserInternalID(ctx, authorUserPublicID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get author user: %w", err)
+		}
+		entry.AuthorUserID = sql.NullInt64{Int64: authorUserID, Valid: true}
 	}
 
 	if req.InitialEntry.Body != nil {
@@ -290,7 +295,7 @@ func (s *service) SearchTickets(ctx context.Context, criteria *SearchTicketReque
 
 // -------------------- Entry Operations --------------------
 
-func (s *service) CreateEntry(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserID *int64) (*EntryDetailResponse, error) {
+func (s *service) CreateEntry(ctx context.Context, ticketPublicID string, req *CreateEntryRequest, authorUserPublicID string) (*EntryDetailResponse, error) {
 	ticketID, err := s.repo.GetTicketInternalID(ctx, ticketPublicID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -316,8 +321,13 @@ func (s *service) CreateEntry(ctx context.Context, ticketPublicID string, req *C
 		Payload:   payload,
 	}
 
-	if authorUserID != nil {
-		entry.AuthorUserID = sql.NullInt64{Int64: *authorUserID, Valid: true}
+	// Set author user ID if provided
+	if authorUserPublicID != "" {
+		authorUserID, err := s.repo.GetUserInternalID(ctx, authorUserPublicID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get author user: %w", err)
+		}
+		entry.AuthorUserID = sql.NullInt64{Int64: authorUserID, Valid: true}
 	}
 
 	if req.Body != nil {
