@@ -90,6 +90,118 @@ definitions:
       name:
         type: object
     type: object
+  ews.EmailAddress:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+    type: object
+  ews.EmailDetail:
+    properties:
+      bcc_recipients:
+        items:
+          $ref: '#/definitions/ews.EmailAddress'
+        type: array
+      body:
+        type: string
+      body_type:
+        description: '"Text" or "HTML"'
+        type: string
+      categories:
+        items:
+          type: string
+        type: array
+      cc_recipients:
+        items:
+          $ref: '#/definitions/ews.EmailAddress'
+        type: array
+      conversation_id:
+        type: string
+      from:
+        $ref: '#/definitions/ews.EmailAddress'
+      has_attachments:
+        type: boolean
+      importance:
+        type: string
+      internet_message_id:
+        type: string
+      is_read:
+        type: boolean
+      item_id:
+        type: string
+      received_date:
+        type: string
+      sent_date:
+        type: string
+      subject:
+        type: string
+      to_recipients:
+        items:
+          $ref: '#/definitions/ews.EmailAddress'
+        type: array
+    type: object
+  ews.EmailListItem:
+    properties:
+      conversation_id:
+        type: string
+      from:
+        type: string
+      from_email:
+        type: string
+      has_attachments:
+        type: boolean
+      is_read:
+        type: boolean
+      item_id:
+        type: string
+      preview:
+        type: string
+      received_date:
+        type: string
+      subject:
+        type: string
+    type: object
+  ews.ErrorResponse:
+    properties:
+      error:
+        example: Bad Request
+        type: string
+      message:
+        example: Invalid request body
+        type: string
+    type: object
+  ews.GetEmailDetailResponse:
+    properties:
+      email:
+        $ref: '#/definitions/ews.EmailDetail'
+      thread:
+        items:
+          $ref: '#/definitions/ews.EmailListItem'
+        type: array
+    type: object
+  ews.HealthResponse:
+    properties:
+      message:
+        example: EWS client is configured and ready
+        type: string
+      status:
+        example: healthy
+        type: string
+    type: object
+  ews.ListEmailsResponse:
+    properties:
+      emails:
+        items:
+          $ref: '#/definitions/ews.EmailListItem'
+        type: array
+      limit:
+        type: integer
+      offset:
+        type: integer
+      total:
+        type: integer
+    type: object
   rbac.ErrorResponse:
     properties:
       error:
@@ -1153,6 +1265,130 @@ paths:
       summary: Health Check
       tags:
       - health
+  /plugins/ews/email:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve full details of a specific email including body content
+        and conversation thread. Requires authentication.
+      parameters:
+      - description: Email Item ID (Exchange item ID)
+        in: query
+        name: item_id
+        required: true
+        type: string
+      - description: Email address of the mailbox to access
+        in: query
+        name: mailbox
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email details retrieved successfully
+          schema:
+            $ref: '#/definitions/ews.GetEmailDetailResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "404":
+          description: Email not found
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "503":
+          description: EWS service unavailable
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get email details by ID
+      tags:
+      - plugins/ews
+  /plugins/ews/emails:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of emails from a specified Exchange mailbox and
+        folder. Requires authentication.
+      parameters:
+      - description: Email address of the mailbox to access
+        in: query
+        name: mailbox
+        required: true
+        type: string
+      - default: inbox
+        description: Folder name (inbox, sent, drafts, etc.)
+        in: query
+        name: folder
+        type: string
+      - default: 50
+        description: Number of emails to retrieve (max 100)
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Emails retrieved successfully
+          schema:
+            $ref: '#/definitions/ews.ListEmailsResponse'
+        "400":
+          description: Invalid request parameters
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "401":
+          description: Unauthorized - Invalid or missing token
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "503":
+          description: EWS service unavailable
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List emails from Exchange mailbox
+      tags:
+      - plugins/ews
+  /plugins/ews/health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the Exchange Web Services connection is properly configured
+        and accessible
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: EWS connection is healthy
+          schema:
+            $ref: '#/definitions/ews.HealthResponse'
+        "503":
+          description: EWS service unavailable
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+      summary: Check EWS connection health
+      tags:
+      - plugins/ews
   /tags:
     get:
       consumes:

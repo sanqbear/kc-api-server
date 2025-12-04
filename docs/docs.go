@@ -646,6 +646,191 @@ const docTemplate = `{
                 }
             }
         },
+        "/plugins/ews/email": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve full details of a specific email including body content and conversation thread. Requires authentication.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins/ews"
+                ],
+                "summary": "Get email details by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Email Item ID (Exchange item ID)",
+                        "name": "item_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email address of the mailbox to access",
+                        "name": "mailbox",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email details retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/ews.GetEmailDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Email not found",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "EWS service unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plugins/ews/emails": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a list of emails from a specified Exchange mailbox and folder. Requires authentication.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins/ews"
+                ],
+                "summary": "List emails from Exchange mailbox",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Email address of the mailbox to access",
+                        "name": "mailbox",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "inbox",
+                        "description": "Folder name (inbox, sent, drafts, etc.)",
+                        "name": "folder",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Number of emails to retrieve (max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Pagination offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Emails retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ListEmailsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing token",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "EWS service unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plugins/ews/health": {
+            "get": {
+                "description": "Check if the Exchange Web Services connection is properly configured and accessible",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plugins/ews"
+                ],
+                "summary": "Check EWS connection health",
+                "responses": {
+                    "200": {
+                        "description": "EWS connection is healthy",
+                        "schema": {
+                            "$ref": "#/definitions/ews.HealthResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "EWS service unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tags": {
             "get": {
                 "security": [
@@ -1874,6 +2059,175 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "object"
+                }
+            }
+        },
+        "ews.EmailAddress": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "ews.EmailDetail": {
+            "type": "object",
+            "properties": {
+                "bcc_recipients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ews.EmailAddress"
+                    }
+                },
+                "body": {
+                    "type": "string"
+                },
+                "body_type": {
+                    "description": "\"Text\" or \"HTML\"",
+                    "type": "string"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cc_recipients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ews.EmailAddress"
+                    }
+                },
+                "conversation_id": {
+                    "type": "string"
+                },
+                "from": {
+                    "$ref": "#/definitions/ews.EmailAddress"
+                },
+                "has_attachments": {
+                    "type": "boolean"
+                },
+                "importance": {
+                    "type": "string"
+                },
+                "internet_message_id": {
+                    "type": "string"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "received_date": {
+                    "type": "string"
+                },
+                "sent_date": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "to_recipients": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ews.EmailAddress"
+                    }
+                }
+            }
+        },
+        "ews.EmailListItem": {
+            "type": "object",
+            "properties": {
+                "conversation_id": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "from_email": {
+                    "type": "string"
+                },
+                "has_attachments": {
+                    "type": "boolean"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "preview": {
+                    "type": "string"
+                },
+                "received_date": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                }
+            }
+        },
+        "ews.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Bad Request"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid request body"
+                }
+            }
+        },
+        "ews.GetEmailDetailResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "$ref": "#/definitions/ews.EmailDetail"
+                },
+                "thread": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ews.EmailListItem"
+                    }
+                }
+            }
+        },
+        "ews.HealthResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "EWS client is configured and ready"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "healthy"
+                }
+            }
+        },
+        "ews.ListEmailsResponse": {
+            "type": "object",
+            "properties": {
+                "emails": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ews.EmailListItem"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
