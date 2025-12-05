@@ -614,6 +614,351 @@
                 }
             }
         },
+        "/files": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a paginated list of files uploaded by the current user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "List my uploaded files",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/files.FileListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Uploads a file to the default storage backend. Maximum file size is 100MB.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Upload a file",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "File to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Optional metadata JSON object",
+                        "name": "metadata",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/files.FileUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "File too large",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves detailed information about a file without downloading it",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get file information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/files.FileResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Performs a soft delete on a file. Only the file uploader can delete the file.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Delete a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/files.SuccessResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not the file owner",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{id}/download": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Downloads the file content. Increments the download counter.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Download a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/files/{id}/metadata": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the metadata of a file. Only the file uploader can update metadata.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Update file metadata",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "File Public ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Metadata to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/files.UpdateFileMetadataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/files.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - not the file owner",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/files.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Returns the health status of the service and database connection",
@@ -2222,6 +2567,155 @@
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "files.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Bad Request"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid request"
+                }
+            }
+        },
+        "files.FileListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/files.FileResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 20
+                },
+                "page": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "total_count": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "files.FileResponse": {
+            "type": "object",
+            "properties": {
+                "checksum_sha256": {
+                    "type": "string",
+                    "example": "abc123..."
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-12-05T00:00:00Z"
+                },
+                "download_count": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "download_url": {
+                    "type": "string",
+                    "example": "/files/01912345-6789-7abc-def0-123456789abc/download"
+                },
+                "file_size": {
+                    "type": "integer",
+                    "example": 1048576
+                },
+                "id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "is_public": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "last_accessed_at": {
+                    "type": "string",
+                    "example": "2024-12-05T00:00:00Z"
+                },
+                "metadata": {
+                    "type": "object"
+                },
+                "mime_type": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "original_filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-12-05T00:00:00Z"
+                },
+                "uploaded_by": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "uploaded_by_name": {
+                    "type": "object"
+                }
+            }
+        },
+        "files.FileUploadResponse": {
+            "type": "object",
+            "properties": {
+                "checksum_sha256": {
+                    "type": "string",
+                    "example": "abc123..."
+                },
+                "download_url": {
+                    "type": "string",
+                    "example": "/files/01912345-6789-7abc-def0-123456789abc/download"
+                },
+                "file_size": {
+                    "type": "integer",
+                    "example": 1048576
+                },
+                "id": {
+                    "type": "string",
+                    "example": "01912345-6789-7abc-def0-123456789abc"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "File uploaded successfully"
+                },
+                "mime_type": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "original_filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                }
+            }
+        },
+        "files.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Operation completed successfully"
+                }
+            }
+        },
+        "files.UpdateFileMetadataRequest": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object"
                 }
             }
         },

@@ -47,6 +47,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 		// Protected ticket routes
 		s.ticketHandler.RegisterRoutes(r)
 
+		// Protected file routes
+		s.fileHandler.RegisterRoutes(r)
+
 		// EWS plugin routes (optional - only registered if configured)
 		if s.ewsHandler != nil {
 			s.ewsHandler.RegisterRoutes(r)

@@ -202,6 +202,112 @@ definitions:
       total:
         type: integer
     type: object
+  files.ErrorResponse:
+    properties:
+      error:
+        example: Bad Request
+        type: string
+      message:
+        example: Invalid request
+        type: string
+    type: object
+  files.FileListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/files.FileResponse'
+        type: array
+      limit:
+        example: 20
+        type: integer
+      page:
+        example: 1
+        type: integer
+      total_count:
+        example: 100
+        type: integer
+      total_pages:
+        example: 5
+        type: integer
+    type: object
+  files.FileResponse:
+    properties:
+      checksum_sha256:
+        example: abc123...
+        type: string
+      created_at:
+        example: "2024-12-05T00:00:00Z"
+        type: string
+      download_count:
+        example: 42
+        type: integer
+      download_url:
+        example: /files/01912345-6789-7abc-def0-123456789abc/download
+        type: string
+      file_size:
+        example: 1048576
+        type: integer
+      id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      is_public:
+        example: false
+        type: boolean
+      last_accessed_at:
+        example: "2024-12-05T00:00:00Z"
+        type: string
+      metadata:
+        type: object
+      mime_type:
+        example: application/pdf
+        type: string
+      original_filename:
+        example: document.pdf
+        type: string
+      updated_at:
+        example: "2024-12-05T00:00:00Z"
+        type: string
+      uploaded_by:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      uploaded_by_name:
+        type: object
+    type: object
+  files.FileUploadResponse:
+    properties:
+      checksum_sha256:
+        example: abc123...
+        type: string
+      download_url:
+        example: /files/01912345-6789-7abc-def0-123456789abc/download
+        type: string
+      file_size:
+        example: 1048576
+        type: integer
+      id:
+        example: 01912345-6789-7abc-def0-123456789abc
+        type: string
+      message:
+        example: File uploaded successfully
+        type: string
+      mime_type:
+        example: application/pdf
+        type: string
+      original_filename:
+        example: document.pdf
+        type: string
+    type: object
+  files.SuccessResponse:
+    properties:
+      message:
+        example: Operation completed successfully
+        type: string
+    type: object
+  files.UpdateFileMetadataRequest:
+    properties:
+      metadata:
+        type: object
+    type: object
   rbac.ErrorResponse:
     properties:
       error:
@@ -1248,6 +1354,231 @@ paths:
       summary: Remove tag from entry
       tags:
       - entries
+  /files:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of files uploaded by the current user
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/files.FileListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List my uploaded files
+      tags:
+      - files
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads a file to the default storage backend. Maximum file size
+        is 100MB.
+      parameters:
+      - description: File to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Optional metadata JSON object
+        in: formData
+        name: metadata
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/files.FileUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "413":
+          description: File too large
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload a file
+      tags:
+      - files
+  /files/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Performs a soft delete on a file. Only the file uploader can delete
+        the file.
+      parameters:
+      - description: File Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/files.SuccessResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "403":
+          description: Forbidden - not the file owner
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a file
+      tags:
+      - files
+    get:
+      consumes:
+      - application/json
+      description: Retrieves detailed information about a file without downloading
+        it
+      parameters:
+      - description: File Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/files.FileResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get file information
+      tags:
+      - files
+  /files/{id}/download:
+    get:
+      description: Downloads the file content. Increments the download counter.
+      parameters:
+      - description: File Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Download a file
+      tags:
+      - files
+  /files/{id}/metadata:
+    put:
+      consumes:
+      - application/json
+      description: Updates the metadata of a file. Only the file uploader can update
+        metadata.
+      parameters:
+      - description: File Public ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Metadata to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/files.UpdateFileMetadataRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/files.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "403":
+          description: Forbidden - not the file owner
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/files.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update file metadata
+      tags:
+      - files
   /health:
     get:
       consumes:

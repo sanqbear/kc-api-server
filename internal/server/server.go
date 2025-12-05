@@ -13,6 +13,7 @@ import (
 
 	"kc-api/internal/auth"
 	"kc-api/internal/database"
+	"kc-api/internal/files"
 	"kc-api/internal/plugins/ews"
 	"kc-api/internal/rbac"
 	"kc-api/internal/tickets"
@@ -30,6 +31,7 @@ type Server struct {
 	rbacMiddleware    *rbac.Middleware
 	permissionManager *rbac.PermissionManager
 	ticketHandler     *tickets.Handler
+	fileHandler       *files.Handler
 	ewsHandler        *ews.Handler
 }
 
@@ -74,6 +76,15 @@ func NewServer() *http.Server {
 	ticketService := tickets.NewService(ticketRepo)
 	ticketHandler := tickets.NewHandler(ticketService)
 
+	// Initialize files domain with DI
+	fileStoragePath := os.Getenv("FILE_STORAGE_PATH")
+	if fileStoragePath == "" {
+		fileStoragePath = "./uploads"
+	}
+	fileRepo := files.NewRepository(db.DB())
+	fileService := files.NewService(fileRepo, fileStoragePath)
+	fileHandler := files.NewHandler(fileService)
+
 	// Initialize EWS plugin (optional)
 	var ewsHandler *ews.Handler
 	ewsConfig, err := ews.LoadConfig()
@@ -101,6 +112,7 @@ func NewServer() *http.Server {
 		rbacMiddleware:    rbacMiddleware,
 		permissionManager: permissionManager,
 		ticketHandler:     ticketHandler,
+		fileHandler:       fileHandler,
 		ewsHandler:        ewsHandler,
 	}
 
