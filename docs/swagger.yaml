@@ -1,5 +1,87 @@
 basePath: /
 definitions:
+  aiqueue.KeywordsRequest:
+    properties:
+      max_keywords:
+        type: integer
+      text:
+        type: string
+    required:
+    - text
+    type: object
+  aiqueue.KeywordsResponse:
+    properties:
+      message:
+        type: string
+      task_id:
+        type: string
+    type: object
+  aiqueue.NormalizeRequest:
+    properties:
+      request:
+        type: string
+      schema:
+        additionalProperties: true
+        type: object
+    required:
+    - request
+    - schema
+    type: object
+  aiqueue.NormalizeResponse:
+    properties:
+      message:
+        type: string
+      task_id:
+        type: string
+    type: object
+  aiqueue.SummarizeRequest:
+    properties:
+      max_length:
+        type: integer
+      text:
+        type: string
+    required:
+    - text
+    type: object
+  aiqueue.SummarizeResponse:
+    properties:
+      message:
+        type: string
+      task_id:
+        type: string
+    type: object
+  aiqueue.TaskStatus:
+    enum:
+    - PENDING
+    - STARTED
+    - SUCCESS
+    - FAILURE
+    - RETRY
+    - REVOKED
+    type: string
+    x-enum-varnames:
+    - TaskStatusPending
+    - TaskStatusStarted
+    - TaskStatusSuccess
+    - TaskStatusFailure
+    - TaskStatusRetry
+    - TaskStatusRevoked
+  aiqueue.TaskStatusResponse:
+    properties:
+      completed_at:
+        type: string
+      error:
+        type: string
+      result:
+        additionalProperties: true
+        type: object
+      started_at:
+        type: string
+      status:
+        $ref: '#/definitions/aiqueue.TaskStatus'
+      task_id:
+        type: string
+    type: object
   auth.ErrorResponse:
     properties:
       error:
@@ -971,6 +1053,13 @@ definitions:
         example: 10
         type: integer
     type: object
+  utils.ErrorResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -1031,6 +1120,176 @@ paths:
       summary: Refresh API permissions cache
       tags:
       - admin
+  /api/ai/keywords:
+    post:
+      consumes:
+      - application/json
+      description: Submits a keyword extraction task to the AI worker queue and returns
+        a task ID for tracking
+      parameters:
+      - description: Keyword extraction request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/aiqueue.KeywordsRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/aiqueue.KeywordsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Submit keyword extraction task
+      tags:
+      - ai
+  /api/ai/normalize:
+    post:
+      consumes:
+      - application/json
+      description: Submits a JSON normalization task to the AI worker queue and returns
+        a task ID for tracking. This normalizes unstructured text into a structured
+        JSON format based on the provided schema.
+      parameters:
+      - description: Normalization request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/aiqueue.NormalizeRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/aiqueue.NormalizeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Submit JSON normalization task
+      tags:
+      - ai
+  /api/ai/summarize:
+    post:
+      consumes:
+      - application/json
+      description: Submits a text summarization task to the AI worker queue and returns
+        a task ID for tracking
+      parameters:
+      - description: Summarization request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/aiqueue.SummarizeRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/aiqueue.SummarizeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Submit text summarization task
+      tags:
+      - ai
+  /api/ai/tasks/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes the result of a completed task from the queue system. This
+        is useful for cleanup after retrieving results.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete task result
+      tags:
+      - ai
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the status and result of a previously submitted AI task.
+        Returns task status (PENDING, STARTED, SUCCESS, FAILURE) and the result if
+        available.
+      parameters:
+      - description: Task ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/aiqueue.TaskStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get task status and result
+      tags:
+      - ai
   /auth/login:
     post:
       consumes:
