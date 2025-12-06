@@ -116,6 +116,7 @@ func NewServer() *http.Server {
 		ewsHandler:        ewsHandler,
 	}
 
+	log.Printf("Server starting on port %d", NewServer.port)
 	// Declare Server config
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", NewServer.port),
