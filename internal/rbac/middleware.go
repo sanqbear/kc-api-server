@@ -1,13 +1,13 @@
 package rbac
 
 import (
-	"encoding/json"
 	"net/http"
 	"slices"
 
 	"github.com/go-chi/chi/v5"
 
 	"kc-api/internal/auth"
+	"kc-api/internal/utils"
 )
 
 // Middleware provides RBAC authorization middleware
@@ -59,7 +59,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 
 		// Check if user has at least one of the required roles
 		if len(userRoles) == 0 {
-			respondError(w, http.StatusForbidden, "Forbidden", "Access denied: authentication required")
+			utils.RespondError(w, r, http.StatusForbidden, "Forbidden", "Access denied: authentication required")
 			return
 		}
 
@@ -72,7 +72,7 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 		}
 
 		if !hasRequiredRole {
-			respondError(w, http.StatusForbidden, "Forbidden", "Access denied: insufficient permissions")
+			utils.RespondError(w, r, http.StatusForbidden, "Forbidden", "Access denied: insufficient permissions")
 			return
 		}
 
@@ -85,11 +85,4 @@ func (m *Middleware) Authorize(next http.Handler) http.Handler {
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Message string `json:"message"`
-}
-
-// respondError writes an error response
-func respondError(w http.ResponseWriter, status int, errType, message string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(ErrorResponse{Error: errType, Message: message})
 }

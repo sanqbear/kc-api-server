@@ -13,7 +13,15 @@ import (
 
 func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+
+	// Recovery middleware to catch panics and log stack traces
+	r.Use(RecoverMiddleware)
+
+	// Detailed logger middleware with enhanced error logging
+	r.Use(DetailedLoggerMiddleware)
+
+	// Request ID middleware for tracing
+	r.Use(middleware.RequestID)
 
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},

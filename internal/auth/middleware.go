@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"strings"
+
+	"kc-api/internal/utils"
 )
 
 // Context keys for storing user information
@@ -31,14 +33,14 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 		// Get token from Authorization header
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			respondError(w, http.StatusUnauthorized, "Unauthorized", "Authorization header required")
+			utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Authorization header required")
 			return
 		}
 
 		// Check Bearer prefix
 		parts := strings.SplitN(authHeader, " ", 2)
 		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-			respondError(w, http.StatusUnauthorized, "Unauthorized", "Invalid authorization header format")
+			utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Invalid authorization header format")
 			return
 		}
 
@@ -47,7 +49,7 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 		// Validate token
 		claims, err := m.service.ValidateAccessToken(tokenString)
 		if err != nil {
-			respondError(w, http.StatusUnauthorized, "Unauthorized", "Invalid or expired token")
+			utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Invalid or expired token")
 			return
 		}
 
@@ -94,7 +96,7 @@ func (m *Middleware) RequireRoles(roles ...string) func(http.Handler) http.Handl
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			userRoles := GetUserRolesFromContext(r.Context())
 			if len(userRoles) == 0 {
-				respondError(w, http.StatusForbidden, "Forbidden", "Access denied")
+				utils.RespondError(w, r, http.StatusForbidden, "Forbidden", "Access denied")
 				return
 			}
 
@@ -113,7 +115,7 @@ func (m *Middleware) RequireRoles(roles ...string) func(http.Handler) http.Handl
 			}
 
 			if !hasRole {
-				respondError(w, http.StatusForbidden, "Forbidden", "Insufficient permissions")
+				utils.RespondError(w, r, http.StatusForbidden, "Forbidden", "Insufficient permissions")
 				return
 			}
 
@@ -128,7 +130,7 @@ func (m *Middleware) RequireAllRoles(roles ...string) func(http.Handler) http.Ha
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			userRoles := GetUserRolesFromContext(r.Context())
 			if len(userRoles) == 0 {
-				respondError(w, http.StatusForbidden, "Forbidden", "Access denied")
+				utils.RespondError(w, r, http.StatusForbidden, "Forbidden", "Access denied")
 				return
 			}
 
@@ -140,7 +142,7 @@ func (m *Middleware) RequireAllRoles(roles ...string) func(http.Handler) http.Ha
 
 			for _, requiredRole := range roles {
 				if !userRoleSet[requiredRole] {
-					respondError(w, http.StatusForbidden, "Forbidden", "Insufficient permissions")
+					utils.RespondError(w, r, http.StatusForbidden, "Forbidden", "Insufficient permissions")
 					return
 				}
 			}

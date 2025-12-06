@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"kc-api/internal/auth"
+	"kc-api/internal/utils"
 )
 
 const (
@@ -60,14 +61,14 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 
 	// Parse multipart form
 	if err := r.ParseMultipartForm(MaxUploadSize); err != nil {
-		respondError(w, http.StatusRequestEntityTooLarge, "File too large", "Maximum file size is 100MB")
+		utils.RespondError(w, r, http.StatusRequestEntityTooLarge, "File too large", "Maximum file size is 100MB")
 		return
 	}
 
 	// Get file from form
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "File is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "File is required")
 		return
 	}
 	defer file.Close()
@@ -77,7 +78,7 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	metadataStr := r.FormValue("metadata")
 	if metadataStr != "" {
 		if err := json.Unmarshal([]byte(metadataStr), &metadata); err != nil {
-			respondError(w, http.StatusBadRequest, "Bad Request", "Invalid metadata JSON")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid metadata JSON")
 			return
 		}
 	}
@@ -93,18 +94,18 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	result, err := h.service.UploadFile(r.Context(), file, header, uploaderPtr, metadata)
 	if err != nil {
 		if errors.Is(err, ErrFileTooLarge) {
-			respondError(w, http.StatusRequestEntityTooLarge, "File too large", err.Error())
+			utils.RespondError(w, r, http.StatusRequestEntityTooLarge, "File too large", err.Error())
 			return
 		}
 		if errors.Is(err, ErrInvalidMimeType) {
-			respondError(w, http.StatusBadRequest, "Invalid MIME type", err.Error())
+			utils.RespondError(w, r, http.StatusBadRequest, "Invalid MIME type", err.Error())
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Failed to upload file", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to upload file")
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, result)
+	utils.RespondJSON(w, http.StatusCreated, result)
 }
 
 // GetFileInfo godoc
@@ -122,21 +123,21 @@ func (h *Handler) UploadFile(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetFileInfo(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "File ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "File ID is required")
 		return
 	}
 
 	result, err := h.service.GetFileInfo(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrFileNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "File not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "File not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // DownloadFile godoc
@@ -153,17 +154,17 @@ func (h *Handler) GetFileInfo(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "File ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "File ID is required")
 		return
 	}
 
 	reader, file, err := h.service.GetFileForDownload(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrFileNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "File not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "File not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 	defer reader.Close()
@@ -199,7 +200,7 @@ func (h *Handler) ListMyFiles(w http.ResponseWriter, r *http.Request) {
 	// Get current user ID from context
 	uploaderID := auth.GetUserIDFromContext(r.Context())
 	if uploaderID == "" {
-		respondError(w, http.StatusUnauthorized, "Unauthorized", "Authentication required")
+		utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Authentication required")
 		return
 	}
 
@@ -215,11 +216,11 @@ func (h *Handler) ListMyFiles(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.ListMyFiles(r.Context(), uploaderID, page, limit)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to retrieve files", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to retrieve files")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // UpdateFileMetadata godoc
@@ -241,37 +242,37 @@ func (h *Handler) ListMyFiles(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateFileMetadata(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "File ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "File ID is required")
 		return
 	}
 
 	// Get current user ID from context
 	uploaderID := auth.GetUserIDFromContext(r.Context())
 	if uploaderID == "" {
-		respondError(w, http.StatusUnauthorized, "Unauthorized", "Authentication required")
+		utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Authentication required")
 		return
 	}
 
 	var req UpdateFileMetadataRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	if err := h.service.UpdateFileMetadata(r.Context(), id, uploaderID, req.Metadata); err != nil {
 		if errors.Is(err, ErrFileNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "File not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "File not found")
 			return
 		}
 		if errors.Is(err, ErrUnauthorized) {
-			respondError(w, http.StatusForbidden, "Forbidden", "You can only update your own files")
+			utils.RespondError(w, r, http.StatusForbidden, "Forbidden", "You can only update your own files")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "File metadata updated successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "File metadata updated successfully"})
 }
 
 // DeleteFile godoc
@@ -291,43 +292,31 @@ func (h *Handler) UpdateFileMetadata(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteFile(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "File ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "File ID is required")
 		return
 	}
 
 	// Get current user ID from context
 	requesterID := auth.GetUserIDFromContext(r.Context())
 	if requesterID == "" {
-		respondError(w, http.StatusUnauthorized, "Unauthorized", "Authentication required")
+		utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Authentication required")
 		return
 	}
 
 	if err := h.service.DeleteFile(r.Context(), id, requesterID); err != nil {
 		if errors.Is(err, ErrFileNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "File not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "File not found")
 			return
 		}
 		if errors.Is(err, ErrUnauthorized) {
-			respondError(w, http.StatusForbidden, "Forbidden", "You can only delete your own files")
+			utils.RespondError(w, r, http.StatusForbidden, "Forbidden", "You can only delete your own files")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "File deleted successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "File deleted successfully"})
 }
 
 // -------------------- Helper Functions --------------------
-
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func respondError(w http.ResponseWriter, status int, errType, message string) {
-	respondJSON(w, status, ErrorResponse{Error: errType, Message: message})
-}

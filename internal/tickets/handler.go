@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"kc-api/internal/auth"
+	"kc-api/internal/utils"
 )
 
 // Handler handles HTTP requests for ticket operations
@@ -87,11 +88,11 @@ func (h *Handler) ListTickets(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.ListTickets(r.Context(), page, limit)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to retrieve tickets", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to retrieve tickets")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // CreateTicket godoc
@@ -109,7 +110,7 @@ func (h *Handler) ListTickets(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 	var req CreateTicketRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
@@ -120,14 +121,14 @@ func (h *Handler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidTitle):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Title is required")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Title is required")
 		default:
-			respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+			utils.RespondInternalError(w, r, err, "Failed to create ticket")
 		}
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, result)
+	utils.RespondJSON(w, http.StatusCreated, result)
 }
 
 // GetTicketByID godoc
@@ -145,21 +146,21 @@ func (h *Handler) CreateTicket(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetTicketByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
 		return
 	}
 
 	result, err := h.service.GetTicketByID(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Ticket not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Ticket not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to retrieve ticket")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // UpdateTicket godoc
@@ -179,27 +180,27 @@ func (h *Handler) GetTicketByID(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
 		return
 	}
 
 	var req UpdateTicketRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	result, err := h.service.UpdateTicket(r.Context(), id, &req)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Ticket not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Ticket not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // DeleteTicket godoc
@@ -217,21 +218,21 @@ func (h *Handler) UpdateTicket(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteTicket(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
 		return
 	}
 
 	err := h.service.DeleteTicket(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Ticket not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Ticket not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Ticket deleted successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Ticket deleted successfully"})
 }
 
 // SearchTickets godoc
@@ -261,17 +262,17 @@ func (h *Handler) SearchTickets(w http.ResponseWriter, r *http.Request) {
 
 	var req SearchTicketRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	result, err := h.service.SearchTickets(r.Context(), &req, page, limit)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to search tickets", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to search tickets")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // AddTagsToTicket godoc
@@ -291,27 +292,27 @@ func (h *Handler) SearchTickets(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AddTagsToTicket(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
 		return
 	}
 
 	var req AddTagRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	err := h.service.AddTagsToTicket(r.Context(), id, &req)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Ticket not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Ticket not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Tags added successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Tags added successfully"})
 }
 
 // RemoveTagFromTicket godoc
@@ -330,31 +331,31 @@ func (h *Handler) AddTagsToTicket(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) RemoveTagFromTicket(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
 		return
 	}
 
 	tagID, err := strconv.ParseInt(chi.URLParam(r, "tagId"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
 		return
 	}
 
 	err = h.service.RemoveTagFromTicket(r.Context(), id, tagID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Ticket not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Ticket not found")
 			return
 		}
 		if errors.Is(err, ErrTagNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Tag not found on ticket")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Tag not found on ticket")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Tag removed successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Tag removed successfully"})
 }
 
 // -------------------- Entry Handlers --------------------
@@ -376,13 +377,13 @@ func (h *Handler) RemoveTagFromTicket(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	ticketID := chi.URLParam(r, "id")
 	if ticketID == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Ticket ID is required")
 		return
 	}
 
 	var req CreateEntryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
@@ -392,14 +393,14 @@ func (h *Handler) CreateEntry(w http.ResponseWriter, r *http.Request) {
 	result, err := h.service.CreateEntry(r.Context(), ticketID, &req, authorUserID)
 	if err != nil {
 		if errors.Is(err, ErrTicketNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Ticket not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Ticket not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, result)
+	utils.RespondJSON(w, http.StatusCreated, result)
 }
 
 // GetEntryByID godoc
@@ -417,21 +418,21 @@ func (h *Handler) CreateEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetEntryByID(w http.ResponseWriter, r *http.Request) {
 	entryID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
 		return
 	}
 
 	result, err := h.service.GetEntryByID(r.Context(), entryID)
 	if err != nil {
 		if errors.Is(err, ErrEntryNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Entry not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Entry not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // UpdateEntry godoc
@@ -451,27 +452,27 @@ func (h *Handler) GetEntryByID(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 	entryID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
 		return
 	}
 
 	var req UpdateEntryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	result, err := h.service.UpdateEntry(r.Context(), entryID, &req)
 	if err != nil {
 		if errors.Is(err, ErrEntryNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Entry not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Entry not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // DeleteEntry godoc
@@ -489,21 +490,21 @@ func (h *Handler) UpdateEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 	entryID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
 		return
 	}
 
 	err = h.service.DeleteEntry(r.Context(), entryID)
 	if err != nil {
 		if errors.Is(err, ErrEntryNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Entry not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Entry not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Entry deleted successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Entry deleted successfully"})
 }
 
 // AddTagsToEntry godoc
@@ -523,27 +524,27 @@ func (h *Handler) DeleteEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) AddTagsToEntry(w http.ResponseWriter, r *http.Request) {
 	entryID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
 		return
 	}
 
 	var req AddTagRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	err = h.service.AddTagsToEntry(r.Context(), entryID, &req)
 	if err != nil {
 		if errors.Is(err, ErrEntryNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Entry not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Entry not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Tags added successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Tags added successfully"})
 }
 
 // RemoveTagFromEntry godoc
@@ -562,31 +563,31 @@ func (h *Handler) AddTagsToEntry(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) RemoveTagFromEntry(w http.ResponseWriter, r *http.Request) {
 	entryID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid entry ID")
 		return
 	}
 
 	tagID, err := strconv.ParseInt(chi.URLParam(r, "tagId"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
 		return
 	}
 
 	err = h.service.RemoveTagFromEntry(r.Context(), entryID, tagID)
 	if err != nil {
 		if errors.Is(err, ErrEntryNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Entry not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Entry not found")
 			return
 		}
 		if errors.Is(err, ErrTagNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Tag not found on entry")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Tag not found on entry")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Tag removed successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Tag removed successfully"})
 }
 
 // -------------------- Tag Handlers --------------------
@@ -616,11 +617,11 @@ func (h *Handler) ListTags(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.ListTags(r.Context(), page, limit)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to retrieve tags", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to retrieve tags")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // CreateTag godoc
@@ -638,7 +639,7 @@ func (h *Handler) ListTags(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateTag(w http.ResponseWriter, r *http.Request) {
 	var req CreateTagRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
@@ -646,14 +647,14 @@ func (h *Handler) CreateTag(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidTagName):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Tag name is required")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Tag name is required")
 		default:
-			respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+			utils.RespondInternalError(w, r, err, "Internal server error")
 		}
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, result)
+	utils.RespondJSON(w, http.StatusCreated, result)
 }
 
 // GetTagByID godoc
@@ -671,21 +672,21 @@ func (h *Handler) CreateTag(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetTagByID(w http.ResponseWriter, r *http.Request) {
 	tagID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
 		return
 	}
 
 	result, err := h.service.GetTagByID(r.Context(), tagID)
 	if err != nil {
 		if errors.Is(err, ErrTagNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Tag not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Tag not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // UpdateTag godoc
@@ -705,27 +706,27 @@ func (h *Handler) GetTagByID(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateTag(w http.ResponseWriter, r *http.Request) {
 	tagID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
 		return
 	}
 
 	var req UpdateTagRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	result, err := h.service.UpdateTag(r.Context(), tagID, &req)
 	if err != nil {
 		if errors.Is(err, ErrTagNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Tag not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Tag not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // DeleteTag godoc
@@ -743,33 +744,21 @@ func (h *Handler) UpdateTag(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteTag(w http.ResponseWriter, r *http.Request) {
 	tagID, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid tag ID")
 		return
 	}
 
 	err = h.service.DeleteTag(r.Context(), tagID)
 	if err != nil {
 		if errors.Is(err, ErrTagNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "Tag not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "Tag not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Internal server error")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Tag deleted successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Tag deleted successfully"})
 }
 
 // -------------------- Helper Functions --------------------
-
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func respondError(w http.ResponseWriter, status int, errType, message string) {
-	respondJSON(w, status, ErrorResponse{Error: errType, Message: message})
-}

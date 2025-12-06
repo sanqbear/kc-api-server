@@ -1,10 +1,10 @@
 package rbac
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"kc-api/internal/utils"
 )
 
 // Handler handles HTTP requests for RBAC operations
@@ -42,16 +42,9 @@ type SuccessResponse struct {
 // @Router       /admin/refresh-permissions [post]
 func (h *Handler) RefreshPermissions(w http.ResponseWriter, r *http.Request) {
 	if err := h.permissionManager.LoadPermissions(r.Context()); err != nil {
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", "Failed to refresh permissions: "+err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to refresh permissions")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Permissions refreshed successfully"})
-}
-
-// respondJSON writes a JSON response
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(data)
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Permissions refreshed successfully"})
 }

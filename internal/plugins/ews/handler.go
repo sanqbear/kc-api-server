@@ -2,13 +2,12 @@ package ews
 
 import (
 	"context"
-	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"kc-api/internal/utils"
 )
 
 // Handler handles Exchange Web Services related HTTP requests
@@ -52,7 +51,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 func (h *Handler) ListEmails(w http.ResponseWriter, r *http.Request) {
 	// Check if EWS is configured
 	if h.ewsClient == nil {
-		respondJSON(w, http.StatusServiceUnavailable, ErrorResponse{
+		utils.RespondJSON(w, http.StatusServiceUnavailable, ErrorResponse{
 			Error:   "Service Unavailable",
 			Message: "EWS plugin is not configured",
 		})
@@ -62,7 +61,7 @@ func (h *Handler) ListEmails(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters
 	mailbox := r.URL.Query().Get("mailbox")
 	if mailbox == "" {
-		respondJSON(w, http.StatusBadRequest, ErrorResponse{
+		utils.RespondJSON(w, http.StatusBadRequest, ErrorResponse{
 			Error:   "Bad Request",
 			Message: "mailbox parameter is required",
 		})
@@ -80,7 +79,7 @@ func (h *Handler) ListEmails(w http.ResponseWriter, r *http.Request) {
 	if limitStr != "" {
 		parsedLimit, err := strconv.Atoi(limitStr)
 		if err != nil {
-			respondJSON(w, http.StatusBadRequest, ErrorResponse{
+			utils.RespondJSON(w, http.StatusBadRequest, ErrorResponse{
 				Error:   "Bad Request",
 				Message: "invalid limit parameter",
 			})
@@ -95,7 +94,7 @@ func (h *Handler) ListEmails(w http.ResponseWriter, r *http.Request) {
 	if offsetStr != "" {
 		parsedOffset, err := strconv.Atoi(offsetStr)
 		if err != nil {
-			respondJSON(w, http.StatusBadRequest, ErrorResponse{
+			utils.RespondJSON(w, http.StatusBadRequest, ErrorResponse{
 				Error:   "Bad Request",
 				Message: "invalid offset parameter",
 			})
@@ -116,16 +115,12 @@ func (h *Handler) ListEmails(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	response, err := h.ewsClient.ListEmails(ctx, req)
 	if err != nil {
-		log.Printf("Error listing emails: %v", err)
-		respondJSON(w, http.StatusInternalServerError, ErrorResponse{
-			Error:   "Internal Server Error",
-			Message: "Failed to retrieve emails from Exchange server",
-		})
+		utils.RespondInternalError(w, r, err, "Failed to retrieve emails from Exchange server")
 		return
 	}
 
 	// Return response
-	respondJSON(w, http.StatusOK, response)
+	utils.RespondJSON(w, http.StatusOK, response)
 }
 
 // GetEmailDetail handles retrieving full email details
@@ -147,7 +142,7 @@ func (h *Handler) ListEmails(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetEmailDetail(w http.ResponseWriter, r *http.Request) {
 	// Check if EWS is configured
 	if h.ewsClient == nil {
-		respondJSON(w, http.StatusServiceUnavailable, ErrorResponse{
+		utils.RespondJSON(w, http.StatusServiceUnavailable, ErrorResponse{
 			Error:   "Service Unavailable",
 			Message: "EWS plugin is not configured",
 		})
@@ -157,7 +152,7 @@ func (h *Handler) GetEmailDetail(w http.ResponseWriter, r *http.Request) {
 	// Get email ID from query parameter
 	itemID := r.URL.Query().Get("item_id")
 	if itemID == "" {
-		respondJSON(w, http.StatusBadRequest, ErrorResponse{
+		utils.RespondJSON(w, http.StatusBadRequest, ErrorResponse{
 			Error:   "Bad Request",
 			Message: "item_id parameter is required",
 		})
@@ -167,7 +162,7 @@ func (h *Handler) GetEmailDetail(w http.ResponseWriter, r *http.Request) {
 	// Get mailbox from query parameter
 	mailbox := r.URL.Query().Get("mailbox")
 	if mailbox == "" {
-		respondJSON(w, http.StatusBadRequest, ErrorResponse{
+		utils.RespondJSON(w, http.StatusBadRequest, ErrorResponse{
 			Error:   "Bad Request",
 			Message: "mailbox parameter is required",
 		})
@@ -184,26 +179,21 @@ func (h *Handler) GetEmailDetail(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	response, err := h.ewsClient.GetEmailDetail(ctx, req)
 	if err != nil {
-		log.Printf("Error getting email detail: %v", err)
-
 		// Check if it's a not found error
 		if strings.Contains(err.Error(), "no message found") {
-			respondJSON(w, http.StatusNotFound, ErrorResponse{
+			utils.RespondJSON(w, http.StatusNotFound, ErrorResponse{
 				Error:   "Not Found",
 				Message: "Email not found",
 			})
 			return
 		}
 
-		respondJSON(w, http.StatusInternalServerError, ErrorResponse{
-			Error:   "Internal Server Error",
-			Message: "Failed to retrieve email details from Exchange server",
-		})
+		utils.RespondInternalError(w, r, err, "Failed to retrieve email details from Exchange server")
 		return
 	}
 
 	// Return response
-	respondJSON(w, http.StatusOK, response)
+	utils.RespondJSON(w, http.StatusOK, response)
 }
 
 // HealthCheck returns the health status of the EWS integration
@@ -217,14 +207,14 @@ func (h *Handler) GetEmailDetail(w http.ResponseWriter, r *http.Request) {
 // @Router       /plugins/ews/health [get]
 func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	if h.ewsClient == nil {
-		respondJSON(w, http.StatusServiceUnavailable, ErrorResponse{
+		utils.RespondJSON(w, http.StatusServiceUnavailable, ErrorResponse{
 			Error:   "Service Unavailable",
 			Message: "EWS client is not configured",
 		})
 		return
 	}
 
-	respondJSON(w, http.StatusOK, HealthResponse{
+	utils.RespondJSON(w, http.StatusOK, HealthResponse{
 		Status:  "healthy",
 		Message: "EWS client is configured and ready",
 	})
@@ -240,13 +230,4 @@ type ErrorResponse struct {
 type HealthResponse struct {
 	Status  string `json:"status" example:"healthy"`
 	Message string `json:"message" example:"EWS client is configured and ready"`
-}
-
-// respondJSON sends a JSON response
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		log.Printf("Error encoding JSON response: %v", err)
-	}
 }

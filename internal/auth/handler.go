@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"kc-api/internal/utils"
 )
 
 // Handler handles HTTP requests for authentication operations
@@ -52,7 +53,7 @@ func (h *Handler) RegisterProtectedRoutes(r chi.Router) {
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid request body")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid request body")
 		return
 	}
 
@@ -63,19 +64,19 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidEmail):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Invalid email format")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid email format")
 		case errors.Is(err, ErrInvalidName):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Name must have at least one locale value")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Name must have at least one locale value")
 		case errors.Is(err, ErrInvalidPassword):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Password must be at least 8 characters")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Password must be at least 8 characters")
 		case errors.Is(err, ErrEmailExists):
-			respondError(w, http.StatusConflict, "Conflict", "Email already exists")
+			utils.RespondError(w, r, http.StatusConflict, "Conflict", "Email already exists")
 		case errors.Is(err, ErrLoginIDExists):
-			respondError(w, http.StatusConflict, "Conflict", "Login ID already exists")
+			utils.RespondError(w, r, http.StatusConflict, "Conflict", "Login ID already exists")
 		case errors.Is(err, ErrPublicGroupNotFound):
-			respondError(w, http.StatusInternalServerError, "Internal Server Error", "System configuration error")
+			utils.RespondInternalError(w, r, err, "System configuration error")
 		default:
-			respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+			utils.RespondInternalError(w, r, err, "Failed to register user")
 		}
 		return
 	}
@@ -83,7 +84,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	// Set refresh token as HTTP-only cookie
 	setRefreshTokenCookie(w, refreshToken)
 
-	respondJSON(w, http.StatusCreated, result)
+	utils.RespondJSON(w, http.StatusCreated, result)
 }
 
 // Login godoc
@@ -101,7 +102,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Bad Request", "Invalid request body")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid request body")
 		return
 	}
 
@@ -111,17 +112,17 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	result, refreshToken, err := h.service.Login(r.Context(), &req, clientIP, userAgent)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
-			respondError(w, http.StatusUnauthorized, "Unauthorized", "Invalid credentials")
+			utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Invalid credentials")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to login")
 		return
 	}
 
 	// Set refresh token as HTTP-only cookie
 	setRefreshTokenCookie(w, refreshToken)
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // Refresh godoc
@@ -138,7 +139,7 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 	// Get refresh token from cookie
 	cookie, err := r.Cookie(RefreshTokenCookieName)
 	if err != nil {
-		respondError(w, http.StatusUnauthorized, "Unauthorized", "Refresh token not found")
+		utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Refresh token not found")
 		return
 	}
 
@@ -150,15 +151,15 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, ErrInvalidToken):
 			clearRefreshTokenCookie(w)
-			respondError(w, http.StatusUnauthorized, "Unauthorized", "Invalid refresh token")
+			utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Invalid refresh token")
 		case errors.Is(err, ErrTokenRevoked):
 			clearRefreshTokenCookie(w)
-			respondError(w, http.StatusUnauthorized, "Unauthorized", "Token has been revoked. Please login again.")
+			utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Token has been revoked. Please login again.")
 		case errors.Is(err, ErrTokenExpired):
 			clearRefreshTokenCookie(w)
-			respondError(w, http.StatusUnauthorized, "Unauthorized", "Refresh token has expired. Please login again.")
+			utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "Refresh token has expired. Please login again.")
 		default:
-			respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+			utils.RespondInternalError(w, r, err, "Failed to refresh token")
 		}
 		return
 	}
@@ -166,7 +167,7 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 	// Set new refresh token as HTTP-only cookie
 	setRefreshTokenCookie(w, newRefreshToken)
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // Logout godoc
@@ -188,7 +189,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	// Clear the cookie regardless of logout result
 	clearRefreshTokenCookie(w)
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Logged out successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Logged out successfully"})
 }
 
 // LogoutAll godoc
@@ -205,19 +206,19 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) LogoutAll(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserIDFromContext(r.Context())
 	if userID == "" {
-		respondError(w, http.StatusUnauthorized, "Unauthorized", "User not authenticated")
+		utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "User not authenticated")
 		return
 	}
 
 	if err := h.service.LogoutAll(r.Context(), userID); err != nil {
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to logout from all devices")
 		return
 	}
 
 	// Clear the cookie
 	clearRefreshTokenCookie(w)
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "Logged out from all devices successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "Logged out from all devices successfully"})
 }
 
 // Me godoc
@@ -234,17 +235,17 @@ func (h *Handler) LogoutAll(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 	userID := GetUserIDFromContext(r.Context())
 	if userID == "" {
-		respondError(w, http.StatusUnauthorized, "Unauthorized", "User not authenticated")
+		utils.RespondError(w, r, http.StatusUnauthorized, "Unauthorized", "User not authenticated")
 		return
 	}
 
 	result, err := h.service.GetMe(r.Context(), userID)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to retrieve user information")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // setRefreshTokenCookie sets the refresh token as an HTTP-only cookie
@@ -325,16 +326,3 @@ func cleanIP(ip string) string {
 	return ip
 }
 
-// respondJSON writes a JSON response
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-// respondError writes an error response
-func respondError(w http.ResponseWriter, status int, errType, message string) {
-	respondJSON(w, status, ErrorResponse{Error: errType, Message: message})
-}

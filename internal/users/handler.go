@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"kc-api/internal/utils"
 )
 
 // Handler handles HTTP requests for user operations
@@ -56,11 +57,11 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.service.List(r.Context(), page, limit)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to retrieve users", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to retrieve users")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // Create godoc
@@ -79,7 +80,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
@@ -87,20 +88,20 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidEmail):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Invalid email format")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid email format")
 		case errors.Is(err, ErrInvalidName):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Name must have at least one locale value")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Name must have at least one locale value")
 		case errors.Is(err, ErrEmailExists):
-			respondError(w, http.StatusConflict, "Conflict", "Email already exists")
+			utils.RespondError(w, r, http.StatusConflict, "Conflict", "Email already exists")
 		case errors.Is(err, ErrLoginIDExists):
-			respondError(w, http.StatusConflict, "Conflict", "Login ID already exists")
+			utils.RespondError(w, r, http.StatusConflict, "Conflict", "Login ID already exists")
 		default:
-			respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+			utils.RespondInternalError(w, r, err, "Failed to create user")
 		}
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, result)
+	utils.RespondJSON(w, http.StatusCreated, result)
 }
 
 // GetByID godoc
@@ -118,21 +119,21 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "User ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "User ID is required")
 		return
 	}
 
 	result, err := h.service.GetByID(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "User not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "User not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to retrieve user")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // Update godoc
@@ -153,13 +154,13 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "User ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "User ID is required")
 		return
 	}
 
 	var req UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
@@ -167,22 +168,22 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrUserNotFound):
-			respondError(w, http.StatusNotFound, "Not Found", "User not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "User not found")
 		case errors.Is(err, ErrInvalidEmail):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Invalid email format")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Invalid email format")
 		case errors.Is(err, ErrInvalidName):
-			respondError(w, http.StatusBadRequest, "Bad Request", "Name must have at least one locale value")
+			utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "Name must have at least one locale value")
 		case errors.Is(err, ErrEmailExists):
-			respondError(w, http.StatusConflict, "Conflict", "Email already exists")
+			utils.RespondError(w, r, http.StatusConflict, "Conflict", "Email already exists")
 		case errors.Is(err, ErrLoginIDExists):
-			respondError(w, http.StatusConflict, "Conflict", "Login ID already exists")
+			utils.RespondError(w, r, http.StatusConflict, "Conflict", "Login ID already exists")
 		default:
-			respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+			utils.RespondInternalError(w, r, err, "Failed to update user")
 		}
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
+	utils.RespondJSON(w, http.StatusOK, result)
 }
 
 // Delete godoc
@@ -200,21 +201,21 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
-		respondError(w, http.StatusBadRequest, "Bad Request", "User ID is required")
+		utils.RespondError(w, r, http.StatusBadRequest, "Bad Request", "User ID is required")
 		return
 	}
 
 	err := h.service.Delete(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, ErrUserNotFound) {
-			respondError(w, http.StatusNotFound, "Not Found", "User not found")
+			utils.RespondError(w, r, http.StatusNotFound, "Not Found", "User not found")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, "Internal Server Error", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to delete user")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, SuccessResponse{Message: "User deleted successfully"})
+	utils.RespondJSON(w, http.StatusOK, SuccessResponse{Message: "User deleted successfully"})
 }
 
 // Search godoc
@@ -244,29 +245,15 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
 	var req SearchUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.RespondError(w, r, http.StatusBadRequest, "Invalid request body", err.Error())
 		return
 	}
 
 	result, err := h.service.Search(r.Context(), &req, page, limit)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Failed to search users", err.Error())
+		utils.RespondInternalError(w, r, err, "Failed to search users")
 		return
 	}
 
-	respondJSON(w, http.StatusOK, result)
-}
-
-// respondJSON writes a JSON response
-func respondJSON(w http.ResponseWriter, status int, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-// respondError writes an error response
-func respondError(w http.ResponseWriter, status int, errType, message string) {
-	respondJSON(w, status, ErrorResponse{Error: errType, Message: message})
+	utils.RespondJSON(w, http.StatusOK, result)
 }
