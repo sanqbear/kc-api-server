@@ -11,6 +11,7 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 
+	"kc-api/internal/aiqueue"
 	"kc-api/internal/auth"
 	"kc-api/internal/database"
 	"kc-api/internal/files"
@@ -33,6 +34,7 @@ type Server struct {
 	ticketHandler     *tickets.Handler
 	fileHandler       *files.Handler
 	ewsHandler        *ews.Handler
+	aiQueueHandler    *aiqueue.Handler
 }
 
 func NewServer() *http.Server {
@@ -102,6 +104,29 @@ func NewServer() *http.Server {
 		log.Println("EWS plugin not configured (EWS_SERVER_URL not set)")
 	}
 
+	// Initialize AI queue (optional)
+	var aiQueueHandler *aiqueue.Handler
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr != "" {
+		redisPassword := os.Getenv("REDIS_PASSWORD")
+		redisDB, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
+		redisQueueName := os.Getenv("REDIS_QUEUE_NAME")
+		if redisQueueName == "" {
+			redisQueueName = "celery"
+		}
+
+		aiQueueClient, err := aiqueue.NewClient(redisAddr, redisPassword, redisDB, redisQueueName)
+		if err != nil {
+			log.Printf("Warning: Failed to create AI queue client: %v", err)
+		} else {
+			aiQueueService := aiqueue.NewService(aiQueueClient)
+			aiQueueHandler = aiqueue.NewHandler(aiQueueService)
+			log.Println("AI queue integration initialized successfully")
+		}
+	} else {
+		log.Println("AI queue integration not configured (REDIS_ADDR not set)")
+	}
+
 	NewServer := &Server{
 		port:              port,
 		db:                db,
@@ -114,6 +139,7 @@ func NewServer() *http.Server {
 		ticketHandler:     ticketHandler,
 		fileHandler:       fileHandler,
 		ewsHandler:        ewsHandler,
+		aiQueueHandler:    aiQueueHandler,
 	}
 
 	log.Printf("Server starting on port %d", NewServer.port)

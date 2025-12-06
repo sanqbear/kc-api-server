@@ -62,6 +62,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 		if s.ewsHandler != nil {
 			s.ewsHandler.RegisterRoutes(r)
 		}
+
+		// AI queue routes (optional - only registered if configured)
+		if s.aiQueueHandler != nil {
+			s.aiQueueHandler.RegisterRoutes(r)
+		}
 	})
 
 	// Swagger UI route

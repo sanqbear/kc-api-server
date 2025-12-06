@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -221,6 +222,7 @@ func (c *Client) buildGetItemRequest(itemID string) *SOAPEnvelope {
 							{FieldURI: "item:ConversationId"},
 							{FieldURI: "message:InternetMessageId"},
 							{FieldURI: "item:Categories"},
+							{FieldURI: "item:Attachments"},
 						},
 					},
 				},
@@ -479,6 +481,21 @@ func (c *Client) parseGetItemResponse(response *GetItemResponse) (*EmailDetail, 
 		email.Categories = msg.Categories.String
 	}
 
+	// Parse attachments
+	if msg.Attachments != nil {
+		email.Attachments = make([]AttachmentInfo, 0, len(msg.Attachments.FileAttachment))
+		for _, att := range msg.Attachments.FileAttachment {
+			email.Attachments = append(email.Attachments, AttachmentInfo{
+				AttachmentId: att.AttachmentId.Id,
+				Name:         att.Name,
+				ContentType:  att.ContentType,
+				ContentId:    att.ContentId,
+				Size:         att.Size,
+				IsInline:     att.IsInline,
+			})
+		}
+	}
+
 	return email, nil
 }
 
@@ -489,4 +506,149 @@ func (c *Client) getConversationThread(ctx context.Context, mailbox, conversatio
 	// which is more complex to implement
 	// This can be enhanced later if needed
 	return []EmailListItem{}, nil
+}
+
+
+// GetAttachment retrieves the content of a specific attachment
+func (c *Client) GetAttachment(ctx context.Context, attachmentID string) (*AttachmentContent, error) {
+	// Build GetAttachment request
+	envelope := c.buildGetAttachmentRequest(attachmentID)
+
+	// Execute request
+	respBody, err := c.executeGetAttachmentRequest(ctx, envelope)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute GetAttachment request: %w", err)
+	}
+
+	// Parse response
+	attachment, err := c.parseGetAttachmentResponse(respBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse GetAttachment response: %w", err)
+	}
+
+	return attachment, nil
+}
+
+// buildGetAttachmentRequest creates a GetAttachment SOAP request
+func (c *Client) buildGetAttachmentRequest(attachmentID string) *SOAPEnvelope {
+	envelope := &SOAPEnvelope{
+		XMLNS: "http://schemas.xmlsoap.org/soap/envelope/",
+		XSI:   "http://www.w3.org/2001/XMLSchema-instance",
+		M:     "http://schemas.microsoft.com/exchange/services/2006/messages",
+		T:     "http://schemas.microsoft.com/exchange/services/2006/types",
+		Header: SOAPHeader{
+			RequestServerVersion: RequestServerVersion{
+				Version: GetEWSAPIVersion(),
+			},
+		},
+		Body: SOAPBody{
+			Content: GetAttachmentRequest{
+				AttachmentIds: AttachmentIds{
+					AttachmentId: []AttachmentIdRequest{
+						{Id: attachmentID},
+					},
+				},
+			},
+		},
+	}
+
+	return envelope
+}
+
+// executeGetAttachmentRequest sends a GetAttachment SOAP request to EWS
+func (c *Client) executeGetAttachmentRequest(ctx context.Context, envelope *SOAPEnvelope) ([]byte, error) {
+	// Marshal SOAP envelope to XML
+	xmlData, err := xml.MarshalIndent(envelope, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal SOAP request: %w", err)
+	}
+
+	// Add XML declaration
+	xmlRequest := []byte(xml.Header + string(xmlData))
+
+	// Execute HTTP request with retries
+	var respBody []byte
+	var lastErr error
+
+	for attempt := 0; attempt <= c.config.MaxRetries; attempt++ {
+		respBody, lastErr = c.sendGetAttachmentRequest(ctx, xmlRequest)
+		if lastErr == nil {
+			return respBody, nil
+		}
+
+		// Wait before retry (exponential backoff)
+		if attempt < c.config.MaxRetries {
+			waitTime := time.Duration(attempt+1) * time.Second
+			time.Sleep(waitTime)
+		}
+	}
+
+	return nil, fmt.Errorf("failed after %d retries: %w", c.config.MaxRetries, lastErr)
+}
+
+// sendGetAttachmentRequest sends a single GetAttachment HTTP request
+func (c *Client) sendGetAttachmentRequest(ctx context.Context, xmlRequest []byte) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", c.serverURL, bytes.NewReader(xmlRequest))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
+	}
+
+	// Set headers and authentication
+	req.Header.Set("Content-Type", "text/xml; charset=utf-8")
+	req.SetBasicAuth(c.authUser, c.config.ImpersonationPassword)
+
+	// Execute request
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute HTTP request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check status code
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("EWS server returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// Read response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	return respBody, nil
+}
+
+// parseGetAttachmentResponse converts EWS GetAttachment response to AttachmentContent
+func (c *Client) parseGetAttachmentResponse(respBody []byte) (*AttachmentContent, error) {
+	// Parse SOAP response
+	var response GetAttachmentResponse
+	if err := xml.Unmarshal(respBody, &response); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal SOAP response: %w", err)
+	}
+
+	messages := response.Body.GetAttachmentResponse.ResponseMessages.GetAttachmentResponseMessage
+
+	// Check response status
+	if messages.ResponseClass != "Success" {
+		return nil, fmt.Errorf("EWS error: %s", messages.ResponseCode)
+	}
+
+	if len(messages.Attachments.FileAttachment) == 0 {
+		return nil, fmt.Errorf("no attachment found in response")
+	}
+
+	att := messages.Attachments.FileAttachment[0]
+
+	// Base64 decode the content
+	decoded, err := base64.StdEncoding.DecodeString(att.Content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode base64 content: %w", err)
+	}
+
+	return &AttachmentContent{
+		Name:        att.Name,
+		ContentType: att.ContentType,
+		Content:     decoded,
+	}, nil
 }

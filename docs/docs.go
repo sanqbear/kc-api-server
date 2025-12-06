@@ -991,6 +991,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/plugins/ews/attachment": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves the binary content of an email attachment",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "plugins/ews"
+                ],
+                "summary": "Get attachment content",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Email address",
+                        "name": "mailbox",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "EWS Attachment ID",
+                        "name": "attachment_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Attachment content",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request parameters",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "EWS service unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/ews.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/plugins/ews/email": {
             "get": {
                 "security": [
@@ -2407,6 +2466,29 @@ const docTemplate = `{
                 }
             }
         },
+        "ews.AttachmentInfo": {
+            "type": "object",
+            "properties": {
+                "attachment_id": {
+                    "type": "string"
+                },
+                "content_id": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "is_inline": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                }
+            }
+        },
         "ews.EmailAddress": {
             "type": "object",
             "properties": {
@@ -2421,6 +2503,12 @@ const docTemplate = `{
         "ews.EmailDetail": {
             "type": "object",
             "properties": {
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ews.AttachmentInfo"
+                    }
+                },
                 "bcc_recipients": {
                     "type": "array",
                     "items": {

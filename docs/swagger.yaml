@@ -90,6 +90,21 @@ definitions:
       name:
         type: object
     type: object
+  ews.AttachmentInfo:
+    properties:
+      attachment_id:
+        type: string
+      content_id:
+        type: string
+      content_type:
+        type: string
+      is_inline:
+        type: boolean
+      name:
+        type: string
+      size:
+        type: integer
+    type: object
   ews.EmailAddress:
     properties:
       address:
@@ -99,6 +114,10 @@ definitions:
     type: object
   ews.EmailDetail:
     properties:
+      attachments:
+        items:
+          $ref: '#/definitions/ews.AttachmentInfo'
+        type: array
       bcc_recipients:
         items:
           $ref: '#/definitions/ews.EmailAddress'
@@ -1596,6 +1615,44 @@ paths:
       summary: Health Check
       tags:
       - health
+  /plugins/ews/attachment:
+    get:
+      description: Retrieves the binary content of an email attachment
+      parameters:
+      - description: Email address
+        in: query
+        name: mailbox
+        required: true
+        type: string
+      - description: EWS Attachment ID
+        in: query
+        name: attachment_id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: Attachment content
+          schema:
+            type: file
+        "400":
+          description: Invalid request parameters
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+        "503":
+          description: EWS service unavailable
+          schema:
+            $ref: '#/definitions/ews.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get attachment content
+      tags:
+      - plugins/ews
   /plugins/ews/email:
     get:
       consumes:

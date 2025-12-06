@@ -2,6 +2,8 @@ package ews
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -28,6 +30,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 		r.Get("/health", h.HealthCheck)
 		r.Get("/emails", h.ListEmails)
 		r.Get("/email", h.GetEmailDetail)
+		r.Get("/attachment", h.GetAttachment)
 	})
 }
 
@@ -192,6 +195,11 @@ func (h *Handler) GetEmailDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Transform inline images in HTML body to base64 data URLs
+	if response.Email.BodyType == "HTML" && len(response.Email.Attachments) > 0 {
+		response.Email.Body = h.transformInlineImagesToDataURL(ctx, response.Email.Body, response.Email.Attachments)
+	}
+
 	// Return response
 	utils.RespondJSON(w, http.StatusOK, response)
 }
@@ -230,4 +238,93 @@ type ErrorResponse struct {
 type HealthResponse struct {
 	Status  string `json:"status" example:"healthy"`
 	Message string `json:"message" example:"EWS client is configured and ready"`
+}
+
+// GetAttachment handles downloading an attachment
+// @Summary      Get attachment content
+// @Description  Retrieves the binary content of an email attachment
+// @Tags         plugins/ews
+// @Produce      octet-stream
+// @Security     BearerAuth
+// @Param        mailbox query string true "Email address"
+// @Param        attachment_id query string true "EWS Attachment ID"
+// @Success      200 {file} binary "Attachment content"
+// @Failure      400 {object} ErrorResponse "Invalid request parameters"
+// @Failure      500 {object} ErrorResponse "Internal server error"
+// @Failure      503 {object} ErrorResponse "EWS service unavailable"
+// @Router       /plugins/ews/attachment [get]
+func (h *Handler) GetAttachment(w http.ResponseWriter, r *http.Request) {
+	// Check if EWS is configured
+	if h.ewsClient == nil {
+		utils.RespondJSON(w, http.StatusServiceUnavailable, ErrorResponse{
+			Error:   "Service Unavailable",
+			Message: "EWS plugin is not configured",
+		})
+		return
+	}
+
+	// Get attachment_id from query parameter
+	attachmentID := r.URL.Query().Get("attachment_id")
+	if attachmentID == "" {
+		utils.RespondJSON(w, http.StatusBadRequest, ErrorResponse{
+			Error:   "Bad Request",
+			Message: "attachment_id parameter is required",
+		})
+		return
+	}
+
+	// Execute EWS request
+	ctx := context.Background()
+	content, err := h.ewsClient.GetAttachment(ctx, attachmentID)
+	if err != nil {
+		utils.RespondInternalError(w, r, err, "Failed to retrieve attachment from Exchange server")
+		return
+	}
+
+	// Set response headers
+	w.Header().Set("Content-Type", content.ContentType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf("inline; filename=\"%s\"", content.Name))
+	w.Header().Set("Cache-Control", "private, max-age=3600")
+	w.WriteHeader(http.StatusOK)
+
+	// Write binary content
+	_, err = w.Write(content.Content)
+	if err != nil {
+		// Log error but can't change response at this point
+		utils.RespondInternalError(w, r, err, "Failed to write attachment content")
+		return
+	}
+}
+
+// transformInlineImagesToDataURL replaces cid: references with base64 data URLs
+func (h *Handler) transformInlineImagesToDataURL(ctx context.Context, htmlBody string, attachments []AttachmentInfo) string {
+	for _, att := range attachments {
+		if att.ContentId != "" && att.IsInline {
+			// Get attachment content
+			content, err := h.ewsClient.GetAttachment(ctx, att.AttachmentId)
+			if err != nil {
+				// Skip failed attachments
+				continue
+			}
+
+			// Build data URL
+			dataURL := fmt.Sprintf("data:%s;base64,%s",
+				content.ContentType,
+				base64.StdEncoding.EncodeToString(content.Content))
+
+			// ContentId normalization (remove <...> if present)
+			contentId := strings.Trim(att.ContentId, "<>")
+
+			// Replace cid: patterns
+			// Pattern 1: Full content ID
+			htmlBody = strings.ReplaceAll(htmlBody, "cid:"+contentId, dataURL)
+
+			// Pattern 2: Content ID without domain (before @)
+			if idx := strings.Index(contentId, "@"); idx != -1 {
+				localPart := contentId[:idx]
+				htmlBody = strings.ReplaceAll(htmlBody, "cid:"+localPart, dataURL)
+			}
+		}
+	}
+	return htmlBody
 }

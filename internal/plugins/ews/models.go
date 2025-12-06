@@ -17,22 +17,23 @@ type EmailListItem struct {
 
 // EmailDetail represents full details of an email
 type EmailDetail struct {
-	ItemID            string         `json:"item_id"`
-	ConversationID    string         `json:"conversation_id,omitempty"`
-	Subject           string         `json:"subject"`
-	Body              string         `json:"body"`
-	BodyType          string         `json:"body_type"` // "Text" or "HTML"
-	From              EmailAddress   `json:"from"`
-	ToRecipients      []EmailAddress `json:"to_recipients"`
-	CcRecipients      []EmailAddress `json:"cc_recipients,omitempty"`
-	BccRecipients     []EmailAddress `json:"bcc_recipients,omitempty"`
-	ReceivedDate      time.Time      `json:"received_date"`
-	SentDate          time.Time      `json:"sent_date"`
-	HasAttachments    bool           `json:"has_attachments"`
-	IsRead            bool           `json:"is_read"`
-	Importance        string         `json:"importance,omitempty"`
-	Categories        []string       `json:"categories,omitempty"`
-	InternetMessageID string         `json:"internet_message_id,omitempty"`
+	ItemID            string           `json:"item_id"`
+	ConversationID    string           `json:"conversation_id,omitempty"`
+	Subject           string           `json:"subject"`
+	Body              string           `json:"body"`
+	BodyType          string           `json:"body_type"` // "Text" or "HTML"
+	From              EmailAddress     `json:"from"`
+	ToRecipients      []EmailAddress   `json:"to_recipients"`
+	CcRecipients      []EmailAddress   `json:"cc_recipients,omitempty"`
+	BccRecipients     []EmailAddress   `json:"bcc_recipients,omitempty"`
+	ReceivedDate      time.Time        `json:"received_date"`
+	SentDate          time.Time        `json:"sent_date"`
+	HasAttachments    bool             `json:"has_attachments"`
+	IsRead            bool             `json:"is_read"`
+	Importance        string           `json:"importance,omitempty"`
+	Categories        []string         `json:"categories,omitempty"`
+	InternetMessageID string           `json:"internet_message_id,omitempty"`
+	Attachments       []AttachmentInfo `json:"attachments,omitempty"`
 }
 
 // EmailAddress represents an email address with display name
@@ -234,21 +235,22 @@ type Items struct {
 
 // Message represents an email message
 type Message struct {
-	XMLName          struct{}              `xml:"Message"`
-	ItemId           MessageItemId         `xml:"ItemId"`
-	Subject          string                `xml:"Subject"`
-	DateTimeReceived string                `xml:"DateTimeReceived"`
-	DateTimeSent     string                `xml:"DateTimeSent"`
-	From             MessageEmailAddress   `xml:"From"`
-	IsRead           bool                  `xml:"IsRead"`
-	HasAttachments   bool                  `xml:"HasAttachments"`
-	ConversationId   MessageConversationId `xml:"ConversationId"`
-	Body             *MessageBody          `xml:"Body,omitempty"`
-	ToRecipients     *ToRecipients         `xml:"ToRecipients,omitempty"`
-	CcRecipients     *CcRecipients         `xml:"CcRecipients,omitempty"`
-	Importance       string                `xml:"Importance,omitempty"`
-	Categories       *Categories           `xml:"Categories,omitempty"`
-	InternetMessageId string               `xml:"InternetMessageId,omitempty"`
+	XMLName           struct{}              `xml:"Message"`
+	ItemId            MessageItemId         `xml:"ItemId"`
+	Subject           string                `xml:"Subject"`
+	DateTimeReceived  string                `xml:"DateTimeReceived"`
+	DateTimeSent      string                `xml:"DateTimeSent"`
+	From              MessageEmailAddress   `xml:"From"`
+	IsRead            bool                  `xml:"IsRead"`
+	HasAttachments    bool                  `xml:"HasAttachments"`
+	ConversationId    MessageConversationId `xml:"ConversationId"`
+	Body              *MessageBody          `xml:"Body,omitempty"`
+	ToRecipients      *ToRecipients         `xml:"ToRecipients,omitempty"`
+	CcRecipients      *CcRecipients         `xml:"CcRecipients,omitempty"`
+	Importance        string                `xml:"Importance,omitempty"`
+	Categories        *Categories           `xml:"Categories,omitempty"`
+	InternetMessageId string                `xml:"InternetMessageId,omitempty"`
+	Attachments       *Attachments          `xml:"Attachments,omitempty"`
 }
 
 // MessageItemId contains item identification
@@ -332,4 +334,109 @@ type GetItemResponseMessageType struct {
 	ResponseClass string   `xml:"ResponseClass,attr"`
 	ResponseCode  string   `xml:"ResponseCode"`
 	Items         Items
+}
+
+// Attachments contains email attachments
+type Attachments struct {
+	XMLName        struct{}         `xml:"Attachments"`
+	FileAttachment []FileAttachment `xml:"FileAttachment"`
+}
+
+// FileAttachment represents a file attachment
+type FileAttachment struct {
+	AttachmentId AttachmentIdType `xml:"AttachmentId"`
+	Name         string           `xml:"Name"`
+	ContentType  string           `xml:"ContentType"`
+	ContentId    string           `xml:"ContentId"`
+	Size         int              `xml:"Size"`
+	IsInline     bool             `xml:"IsInline"`
+}
+
+// AttachmentIdType contains attachment identification
+type AttachmentIdType struct {
+	Id string `xml:"Id,attr"`
+}
+
+// AttachmentInfo represents attachment information for API responses
+type AttachmentInfo struct {
+	AttachmentId string `json:"attachment_id"`
+	Name         string `json:"name"`
+	ContentType  string `json:"content_type"`
+	ContentId    string `json:"content_id,omitempty"`
+	Size         int    `json:"size"`
+	IsInline     bool   `json:"is_inline"`
+}
+
+// AttachmentContent represents attachment content for downloads
+type AttachmentContent struct {
+	Name        string
+	ContentType string
+	Content     []byte
+}
+
+// GetAttachmentRequest is used to retrieve attachment content
+type GetAttachmentRequest struct {
+	XMLName       struct{} `xml:"m:GetAttachment"`
+	AttachmentIds AttachmentIds
+}
+
+// AttachmentIds contains the IDs of attachments to retrieve
+type AttachmentIds struct {
+	XMLName      struct{} `xml:"m:AttachmentIds"`
+	AttachmentId []AttachmentIdRequest
+}
+
+// AttachmentIdRequest identifies a specific attachment
+type AttachmentIdRequest struct {
+	XMLName struct{} `xml:"t:AttachmentId"`
+	Id      string   `xml:"Id,attr"`
+}
+
+// GetAttachmentResponse represents the response from GetAttachment
+type GetAttachmentResponse struct {
+	XMLName struct{} `xml:"Envelope"`
+	Body    GetAttachmentResponseBody
+}
+
+// GetAttachmentResponseBody contains the response body
+type GetAttachmentResponseBody struct {
+	XMLName               struct{} `xml:"Body"`
+	GetAttachmentResponse GetAttachmentResponseMessage
+}
+
+// GetAttachmentResponseMessage contains the actual response
+type GetAttachmentResponseMessage struct {
+	XMLName          struct{} `xml:"GetAttachmentResponse"`
+	ResponseMessages GetAttachmentResponseMessages
+}
+
+// GetAttachmentResponseMessages contains response messages
+type GetAttachmentResponseMessages struct {
+	XMLName                      struct{} `xml:"ResponseMessages"`
+	GetAttachmentResponseMessage GetAttachmentResponseMessageType
+}
+
+// GetAttachmentResponseMessageType contains the attachments
+type GetAttachmentResponseMessageType struct {
+	XMLName       struct{} `xml:"GetAttachmentResponseMessage"`
+	ResponseClass string   `xml:"ResponseClass,attr"`
+	ResponseCode  string   `xml:"ResponseCode"`
+	Attachments   AttachmentsResponse
+}
+
+// AttachmentsResponse contains attachment data
+type AttachmentsResponse struct {
+	XMLName        struct{}                   `xml:"Attachments"`
+	FileAttachment []FileAttachmentWithContent `xml:"FileAttachment"`
+}
+
+// FileAttachmentWithContent represents a file attachment with content
+type FileAttachmentWithContent struct {
+	AttachmentId AttachmentIdType `xml:"AttachmentId"`
+	Name         string           `xml:"Name"`
+	ContentType  string           `xml:"ContentType"`
+	ContentId    string           `xml:"ContentId"`
+	Size         int              `xml:"Size"`
+	IsInline     bool             `xml:"IsInline"`
+	Content      string           `xml:"Content"` // Base64 encoded
 }
