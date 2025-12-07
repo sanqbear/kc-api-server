@@ -13,10 +13,14 @@ import (
 
 	"kc-api/internal/aiqueue"
 	"kc-api/internal/auth"
+	"kc-api/internal/commoncodes"
 	"kc-api/internal/database"
+	"kc-api/internal/departments"
 	"kc-api/internal/files"
+	"kc-api/internal/groups"
 	"kc-api/internal/plugins/ews"
 	"kc-api/internal/rbac"
+	"kc-api/internal/roles"
 	"kc-api/internal/tickets"
 	"kc-api/internal/users"
 )
@@ -35,6 +39,12 @@ type Server struct {
 	fileHandler       *files.Handler
 	ewsHandler        *ews.Handler
 	aiQueueHandler    *aiqueue.Handler
+
+	// Organization management handlers
+	commonCodeHandler *commoncodes.Handler
+	roleHandler       *roles.Handler
+	departmentHandler *departments.Handler
+	groupHandler      *groups.Handler
 }
 
 func NewServer() *http.Server {
@@ -127,6 +137,26 @@ func NewServer() *http.Server {
 		log.Println("AI queue integration not configured (REDIS_ADDR not set)")
 	}
 
+	// Initialize common codes domain with DI
+	commonCodeRepo := commoncodes.NewRepository(db.DB())
+	commonCodeService := commoncodes.NewService(commonCodeRepo)
+	commonCodeHandler := commoncodes.NewHandler(commonCodeService)
+
+	// Initialize roles domain with DI
+	roleRepo := roles.NewRepository(db.DB())
+	roleService := roles.NewService(roleRepo)
+	roleHandler := roles.NewHandler(roleService)
+
+	// Initialize departments domain with DI
+	departmentRepo := departments.NewRepository(db.DB())
+	departmentService := departments.NewService(departmentRepo)
+	departmentHandler := departments.NewHandler(departmentService)
+
+	// Initialize groups domain with DI
+	groupRepo := groups.NewRepository(db.DB())
+	groupService := groups.NewService(groupRepo)
+	groupHandler := groups.NewHandler(groupService)
+
 	NewServer := &Server{
 		port:              port,
 		db:                db,
@@ -140,6 +170,12 @@ func NewServer() *http.Server {
 		fileHandler:       fileHandler,
 		ewsHandler:        ewsHandler,
 		aiQueueHandler:    aiQueueHandler,
+
+		// Organization management handlers
+		commonCodeHandler: commonCodeHandler,
+		roleHandler:       roleHandler,
+		departmentHandler: departmentHandler,
+		groupHandler:      groupHandler,
 	}
 
 	log.Printf("Server starting on port %d", NewServer.port)

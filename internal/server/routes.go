@@ -67,6 +67,12 @@ func (s *Server) RegisterRoutes() http.Handler {
 		if s.aiQueueHandler != nil {
 			s.aiQueueHandler.RegisterRoutes(r)
 		}
+
+		// Organization management routes
+		s.commonCodeHandler.RegisterRoutes(r)
+		s.roleHandler.RegisterRoutes(r)
+		s.departmentHandler.RegisterRoutes(r)
+		s.groupHandler.RegisterRoutes(r)
 	})
 
 	// Swagger UI route
