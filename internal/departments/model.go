@@ -10,8 +10,10 @@ type Department struct {
 	ID                 int             `json:"-"`
 	PublicID           string          `json:"public_id"`
 	Name               json.RawMessage `json:"name"`
-	Description        json.RawMessage `json:"description"`
+	Email              *string         `json:"email"`
+	LeaderUserID       *int            `json:"-"`
 	ParentDepartmentID *int            `json:"-"`
+	IsVisible          bool            `json:"-"`
 	IsDeleted          bool            `json:"-"`
 	CreatedAt          time.Time       `json:"-"`
 	UpdatedAt          time.Time       `json:"-"`
@@ -22,8 +24,9 @@ type DepartmentResponse struct {
 	ID                       int             `json:"id" example:"1"`
 	PublicID                 string          `json:"public_id" example:"dept-abc123"`
 	Name                     json.RawMessage `json:"name" swaggertype:"object"`
-	Description              json.RawMessage `json:"description" swaggertype:"object"`
+	Email                    *string         `json:"email,omitempty" example:"engineering@company.com"`
 	ParentDepartmentPublicID *string         `json:"parent_department_public_id,omitempty" example:"dept-parent123"`
+	IsVisible                bool            `json:"is_visible" example:"true"`
 }
 
 // DepartmentTreeResponse represents a department with its children for tree structure
@@ -31,29 +34,31 @@ type DepartmentTreeResponse struct {
 	ID                       int                      `json:"id" example:"1"`
 	PublicID                 string                   `json:"public_id" example:"dept-abc123"`
 	Name                     json.RawMessage          `json:"name" swaggertype:"object"`
-	Description              json.RawMessage          `json:"description" swaggertype:"object"`
+	Email                    *string                  `json:"email,omitempty" example:"engineering@company.com"`
 	ParentDepartmentPublicID *string                  `json:"parent_department_public_id,omitempty" example:"dept-parent123"`
+	IsVisible                bool                     `json:"is_visible" example:"true"`
 	Children                 []DepartmentTreeResponse `json:"children,omitempty"`
 }
 
 // CreateDepartmentRequest represents the request to create a department
 type CreateDepartmentRequest struct {
-	Name                     json.RawMessage  `json:"name" swaggertype:"object"`
-	Description              *json.RawMessage `json:"description,omitempty" swaggertype:"object"`
-	ParentDepartmentPublicID *string          `json:"parent_department_public_id,omitempty" example:"dept-parent123"`
+	Name                     json.RawMessage `json:"name" swaggertype:"object"`
+	Email                    *string         `json:"email,omitempty" example:"engineering@company.com"`
+	ParentDepartmentPublicID *string         `json:"parent_department_public_id,omitempty" example:"dept-parent123"`
+	IsVisible                *bool           `json:"is_visible,omitempty" example:"true"`
 }
 
 // UpdateDepartmentRequest represents the request to update a department
 type UpdateDepartmentRequest struct {
 	Name                     *json.RawMessage `json:"name,omitempty" swaggertype:"object"`
-	Description              *json.RawMessage `json:"description,omitempty" swaggertype:"object"`
+	Email                    *string          `json:"email,omitempty" example:"engineering@company.com"`
 	ParentDepartmentPublicID *string          `json:"parent_department_public_id,omitempty" example:"dept-parent123"`
+	IsVisible                *bool            `json:"is_visible,omitempty" example:"true"`
 }
 
 // SearchDepartmentRequest represents the search criteria for departments
 type SearchDepartmentRequest struct {
-	Name        *string `json:"name,omitempty" example:"Engineering"`
-	Description *string `json:"description,omitempty" example:"tech"`
+	Name *string `json:"name,omitempty" example:"Engineering"`
 }
 
 // BatchCreateDepartmentRequest represents batch create request
@@ -66,8 +71,9 @@ type BatchUpdateDepartmentRequest struct {
 	Updates []struct {
 		PublicID                 string           `json:"public_id" example:"dept-abc123"`
 		Name                     *json.RawMessage `json:"name,omitempty" swaggertype:"object"`
-		Description              *json.RawMessage `json:"description,omitempty" swaggertype:"object"`
+		Email                    *string          `json:"email,omitempty" example:"engineering@company.com"`
 		ParentDepartmentPublicID *string          `json:"parent_department_public_id,omitempty" example:"dept-parent123"`
+		IsVisible                *bool            `json:"is_visible,omitempty" example:"true"`
 	} `json:"updates"`
 }
 
@@ -114,8 +120,9 @@ func (d *Department) ToResponse(parentPublicID *string) DepartmentResponse {
 		ID:                       d.ID,
 		PublicID:                 d.PublicID,
 		Name:                     d.Name,
-		Description:              d.Description,
+		Email:                    d.Email,
 		ParentDepartmentPublicID: parentPublicID,
+		IsVisible:                d.IsVisible,
 	}
 }
 
@@ -125,8 +132,9 @@ func (d *Department) ToTreeResponse(parentPublicID *string, children []Departmen
 		ID:                       d.ID,
 		PublicID:                 d.PublicID,
 		Name:                     d.Name,
-		Description:              d.Description,
+		Email:                    d.Email,
 		ParentDepartmentPublicID: parentPublicID,
+		IsVisible:                d.IsVisible,
 		Children:                 children,
 	}
 }

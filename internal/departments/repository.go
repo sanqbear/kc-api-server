@@ -45,22 +45,23 @@ func (r *repository) Create(ctx context.Context, dept *Department) error {
 	}
 
 	query := `
-		INSERT INTO organizations.departments (public_id, name, description, parent_department_id)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO organizations.departments (public_id, name, email, parent_department_id, is_visible)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at, updated_at`
 
 	return r.db.QueryRowContext(ctx, query,
 		dept.PublicID,
 		dept.Name,
-		dept.Description,
+		dept.Email,
 		dept.ParentDepartmentID,
+		dept.IsVisible,
 	).Scan(&dept.ID, &dept.CreatedAt, &dept.UpdatedAt)
 }
 
 // GetByID retrieves a department by ID
 func (r *repository) GetByID(ctx context.Context, id int) (*Department, error) {
 	query := `
-		SELECT id, public_id, name, description, parent_department_id, is_deleted, created_at, updated_at
+		SELECT id, public_id, name, email, parent_department_id, is_visible, is_deleted, created_at, updated_at
 		FROM organizations.departments
 		WHERE id = $1 AND is_deleted = false`
 
@@ -69,8 +70,9 @@ func (r *repository) GetByID(ctx context.Context, id int) (*Department, error) {
 		&dept.ID,
 		&dept.PublicID,
 		&dept.Name,
-		&dept.Description,
+		&dept.Email,
 		&dept.ParentDepartmentID,
+		&dept.IsVisible,
 		&dept.IsDeleted,
 		&dept.CreatedAt,
 		&dept.UpdatedAt,
@@ -84,7 +86,7 @@ func (r *repository) GetByID(ctx context.Context, id int) (*Department, error) {
 // GetByPublicID retrieves a department by public ID
 func (r *repository) GetByPublicID(ctx context.Context, publicID string) (*Department, error) {
 	query := `
-		SELECT id, public_id, name, description, parent_department_id, is_deleted, created_at, updated_at
+		SELECT id, public_id, name, email, parent_department_id, is_visible, is_deleted, created_at, updated_at
 		FROM organizations.departments
 		WHERE public_id = $1 AND is_deleted = false`
 
@@ -93,8 +95,9 @@ func (r *repository) GetByPublicID(ctx context.Context, publicID string) (*Depar
 		&dept.ID,
 		&dept.PublicID,
 		&dept.Name,
-		&dept.Description,
+		&dept.Email,
 		&dept.ParentDepartmentID,
+		&dept.IsVisible,
 		&dept.IsDeleted,
 		&dept.CreatedAt,
 		&dept.UpdatedAt,
@@ -118,7 +121,7 @@ func (r *repository) List(ctx context.Context, page, limit int) ([]Department, i
 
 	// Get departments
 	query := `
-		SELECT id, public_id, name, description, parent_department_id, is_deleted, created_at, updated_at
+		SELECT id, public_id, name, email, parent_department_id, is_visible, is_deleted, created_at, updated_at
 		FROM organizations.departments
 		WHERE is_deleted = false
 		ORDER BY name
@@ -137,8 +140,9 @@ func (r *repository) List(ctx context.Context, page, limit int) ([]Department, i
 			&dept.ID,
 			&dept.PublicID,
 			&dept.Name,
-			&dept.Description,
+			&dept.Email,
 			&dept.ParentDepartmentID,
+			&dept.IsVisible,
 			&dept.IsDeleted,
 			&dept.CreatedAt,
 			&dept.UpdatedAt,
@@ -160,15 +164,17 @@ func (r *repository) Update(ctx context.Context, id int, dept *Department) error
 	query := `
 		UPDATE organizations.departments SET
 			name = $1,
-			description = $2,
+			email = $2,
 			parent_department_id = $3,
+			is_visible = $4,
 			updated_at = NOW()
-		WHERE id = $4 AND is_deleted = false`
+		WHERE id = $5 AND is_deleted = false`
 
 	result, err := r.db.ExecContext(ctx, query,
 		dept.Name,
-		dept.Description,
+		dept.Email,
 		dept.ParentDepartmentID,
+		dept.IsVisible,
 		id,
 	)
 	if err != nil {
@@ -222,12 +228,6 @@ func (r *repository) Search(ctx context.Context, criteria *SearchDepartmentReque
 		argIndex++
 	}
 
-	if criteria.Description != nil && *criteria.Description != "" {
-		conditions = append(conditions, fmt.Sprintf("description::text ILIKE $%d", argIndex))
-		args = append(args, "%"+*criteria.Description+"%")
-		argIndex++
-	}
-
 	whereClause := "WHERE " + strings.Join(conditions, " AND ")
 
 	// Count query
@@ -239,7 +239,7 @@ func (r *repository) Search(ctx context.Context, criteria *SearchDepartmentReque
 
 	// Data query
 	dataQuery := fmt.Sprintf(`
-		SELECT id, public_id, name, description, parent_department_id, is_deleted, created_at, updated_at
+		SELECT id, public_id, name, email, parent_department_id, is_visible, is_deleted, created_at, updated_at
 		FROM organizations.departments
 		%s
 		ORDER BY name
@@ -260,8 +260,9 @@ func (r *repository) Search(ctx context.Context, criteria *SearchDepartmentReque
 			&dept.ID,
 			&dept.PublicID,
 			&dept.Name,
-			&dept.Description,
+			&dept.Email,
 			&dept.ParentDepartmentID,
+			&dept.IsVisible,
 			&dept.IsDeleted,
 			&dept.CreatedAt,
 			&dept.UpdatedAt,
@@ -287,8 +288,8 @@ func (r *repository) BatchCreate(ctx context.Context, depts []Department) (int, 
 	defer tx.Rollback()
 
 	query := `
-		INSERT INTO organizations.departments (public_id, name, description, parent_department_id)
-		VALUES ($1, $2, $3, $4)`
+		INSERT INTO organizations.departments (public_id, name, email, parent_department_id, is_visible)
+		VALUES ($1, $2, $3, $4, $5)`
 
 	successCount := 0
 	for _, dept := range depts {
@@ -300,8 +301,9 @@ func (r *repository) BatchCreate(ctx context.Context, depts []Department) (int, 
 		_, err := tx.ExecContext(ctx, query,
 			publicID,
 			dept.Name,
-			dept.Description,
+			dept.Email,
 			dept.ParentDepartmentID,
+			dept.IsVisible,
 		)
 		if err != nil {
 			continue
@@ -327,10 +329,11 @@ func (r *repository) BatchUpdate(ctx context.Context, updates []Department) (int
 	query := `
 		UPDATE organizations.departments SET
 			name = $1,
-			description = $2,
+			email = $2,
 			parent_department_id = $3,
+			is_visible = $4,
 			updated_at = NOW()
-		WHERE id = $4 AND is_deleted = false`
+		WHERE id = $5 AND is_deleted = false`
 
 	successCount := 0
 	var failedIDs []string
@@ -338,8 +341,9 @@ func (r *repository) BatchUpdate(ctx context.Context, updates []Department) (int
 	for _, dept := range updates {
 		result, err := tx.ExecContext(ctx, query,
 			dept.Name,
-			dept.Description,
+			dept.Email,
 			dept.ParentDepartmentID,
+			dept.IsVisible,
 			dept.ID,
 		)
 		if err != nil {
@@ -406,7 +410,7 @@ func (r *repository) BatchDelete(ctx context.Context, ids []int) (int, []string,
 // GetChildren retrieves all direct children of a department
 func (r *repository) GetChildren(ctx context.Context, parentID int) ([]Department, error) {
 	query := `
-		SELECT id, public_id, name, description, parent_department_id, is_deleted, created_at, updated_at
+		SELECT id, public_id, name, email, parent_department_id, is_visible, is_deleted, created_at, updated_at
 		FROM organizations.departments
 		WHERE parent_department_id = $1 AND is_deleted = false
 		ORDER BY name`
@@ -424,8 +428,9 @@ func (r *repository) GetChildren(ctx context.Context, parentID int) ([]Departmen
 			&dept.ID,
 			&dept.PublicID,
 			&dept.Name,
-			&dept.Description,
+			&dept.Email,
 			&dept.ParentDepartmentID,
+			&dept.IsVisible,
 			&dept.IsDeleted,
 			&dept.CreatedAt,
 			&dept.UpdatedAt,
@@ -446,18 +451,18 @@ func (r *repository) GetChildren(ctx context.Context, parentID int) ([]Departmen
 func (r *repository) GetAllDescendants(ctx context.Context, parentID int) ([]Department, error) {
 	query := `
 		WITH RECURSIVE dept_tree AS (
-			SELECT id, public_id, name, description, parent_department_id, is_deleted, created_at, updated_at
+			SELECT id, public_id, name, email, parent_department_id, is_visible, is_deleted, created_at, updated_at
 			FROM organizations.departments
 			WHERE parent_department_id = $1 AND is_deleted = false
 
 			UNION ALL
 
-			SELECT d.id, d.public_id, d.name, d.description, d.parent_department_id, d.is_deleted, d.created_at, d.updated_at
+			SELECT d.id, d.public_id, d.name, d.email, d.parent_department_id, d.is_visible, d.is_deleted, d.created_at, d.updated_at
 			FROM organizations.departments d
 			INNER JOIN dept_tree dt ON d.parent_department_id = dt.id
 			WHERE d.is_deleted = false
 		)
-		SELECT id, public_id, name, description, parent_department_id, is_deleted, created_at, updated_at
+		SELECT id, public_id, name, email, parent_department_id, is_visible, is_deleted, created_at, updated_at
 		FROM dept_tree
 		ORDER BY name`
 
@@ -474,8 +479,9 @@ func (r *repository) GetAllDescendants(ctx context.Context, parentID int) ([]Dep
 			&dept.ID,
 			&dept.PublicID,
 			&dept.Name,
-			&dept.Description,
+			&dept.Email,
 			&dept.ParentDepartmentID,
+			&dept.IsVisible,
 			&dept.IsDeleted,
 			&dept.CreatedAt,
 			&dept.UpdatedAt,
@@ -495,7 +501,7 @@ func (r *repository) GetAllDescendants(ctx context.Context, parentID int) ([]Dep
 // GetRootDepartments retrieves all departments without a parent
 func (r *repository) GetRootDepartments(ctx context.Context) ([]Department, error) {
 	query := `
-		SELECT id, public_id, name, description, parent_department_id, is_deleted, created_at, updated_at
+		SELECT id, public_id, name, email, parent_department_id, is_visible, is_deleted, created_at, updated_at
 		FROM organizations.departments
 		WHERE parent_department_id IS NULL AND is_deleted = false
 		ORDER BY name`
@@ -513,8 +519,9 @@ func (r *repository) GetRootDepartments(ctx context.Context) ([]Department, erro
 			&dept.ID,
 			&dept.PublicID,
 			&dept.Name,
-			&dept.Description,
+			&dept.Email,
 			&dept.ParentDepartmentID,
+			&dept.IsVisible,
 			&dept.IsDeleted,
 			&dept.CreatedAt,
 			&dept.UpdatedAt,

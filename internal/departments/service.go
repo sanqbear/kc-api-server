@@ -61,10 +61,16 @@ func (s *service) Create(ctx context.Context, req *CreateDepartmentRequest) (*De
 		parentID = &id
 	}
 
+	isVisible := true
+	if req.IsVisible != nil {
+		isVisible = *req.IsVisible
+	}
+
 	dept := &Department{
 		Name:               req.Name,
-		Description:        getOrDefault(req.Description, json.RawMessage("{}")),
+		Email:              req.Email,
 		ParentDepartmentID: parentID,
+		IsVisible:          isVisible,
 	}
 
 	if err := s.repo.Create(ctx, dept); err != nil {
@@ -138,8 +144,11 @@ func (s *service) Update(ctx context.Context, publicID string, req *UpdateDepart
 		}
 		existingDept.Name = *req.Name
 	}
-	if req.Description != nil {
-		existingDept.Description = *req.Description
+	if req.Email != nil {
+		existingDept.Email = req.Email
+	}
+	if req.IsVisible != nil {
+		existingDept.IsVisible = *req.IsVisible
 	}
 	if req.ParentDepartmentPublicID != nil {
 		if *req.ParentDepartmentPublicID == "" {
@@ -247,10 +256,15 @@ func (s *service) BatchCreate(ctx context.Context, req *BatchCreateDepartmentReq
 			parentID = &id
 		}
 
+		isVisible := true
+		if r.IsVisible != nil {
+			isVisible = *r.IsVisible
+		}
 		depts = append(depts, Department{
 			Name:               r.Name,
-			Description:        getOrDefault(r.Description, json.RawMessage("{}")),
+			Email:              r.Email,
 			ParentDepartmentID: parentID,
+			IsVisible:          isVisible,
 		})
 	}
 
@@ -286,8 +300,11 @@ func (s *service) BatchUpdate(ctx context.Context, req *BatchUpdateDepartmentReq
 			}
 			existingDept.Name = *u.Name
 		}
-		if u.Description != nil {
-			existingDept.Description = *u.Description
+		if u.Email != nil {
+			existingDept.Email = u.Email
+		}
+		if u.IsVisible != nil {
+			existingDept.IsVisible = *u.IsVisible
 		}
 		if u.ParentDepartmentPublicID != nil {
 			if *u.ParentDepartmentPublicID == "" {
@@ -494,11 +511,4 @@ func hasAtLeastOneLocale(jsonData json.RawMessage) bool {
 	}
 
 	return len(data) > 0
-}
-
-func getOrDefault(value *json.RawMessage, defaultValue json.RawMessage) json.RawMessage {
-	if value != nil {
-		return *value
-	}
-	return defaultValue
 }
